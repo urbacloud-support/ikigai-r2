@@ -134,6 +134,10 @@ export default function TeamDashboard() {
 
               <div>
                 <h3 className="font-bold text-slate-800 mb-3">2. Payment Verification</h3>
+                <div className="mb-4 bg-white/60 p-4 rounded-xl border border-white/50 flex flex-col items-center">
+                  <p className="text-sm text-slate-600 mb-2 font-medium">Scan to pay Hackathon Fee</p>
+                  <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=IkigaiHackathonFee" alt="Dummy QR Code" className="w-32 h-32 rounded-lg shadow-sm" />
+                </div>
                 <input 
                   type="text" 
                   placeholder="Enter Transaction ID" 
