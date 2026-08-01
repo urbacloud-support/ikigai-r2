@@ -48,8 +48,13 @@ io.on('connection', (socket) => {
   });
 });
 
+import authRoutes from './routes/auth.js';
+
 // Export io so controllers can emit events
 export { io };
+
+// Routes
+app.use('/api/auth', authRoutes);
 
 // Basic health check route
 app.get('/api/health', (req, res) => {
