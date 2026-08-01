@@ -49,12 +49,14 @@ io.on('connection', (socket) => {
 });
 
 import authRoutes from './routes/auth.js';
+import adminRoutes from './routes/admin.js';
 
 // Export io so controllers can emit events
 export { io };
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Basic health check route
 app.get('/api/health', (req, res) => {
