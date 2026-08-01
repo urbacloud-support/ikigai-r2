@@ -18,7 +18,12 @@ export default function Login() {
 
     const res = await login(email, password);
     if (res.success) {
-      navigate('/dashboard');
+      const { user } = useAuthStore.getState();
+      if (user?.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     } else {
       setError(res.message);
     }
