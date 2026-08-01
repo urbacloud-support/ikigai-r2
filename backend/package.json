@@ -4,6 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "dev:bun": "bun --watch server.js",
     "test": "node --experimental-vm-modules node_modules/.bin/jest --runInBand --forceExit"
   },
   "jest": {
