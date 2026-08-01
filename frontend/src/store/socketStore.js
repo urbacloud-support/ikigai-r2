@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { io } from 'socket.io-client';
+import useAuthStore from './authStore';
 
 const useSocketStore = create((set, get) => ({
   socket: null,
@@ -19,9 +20,16 @@ const useSocketStore = create((set, get) => ({
       }));
       
       // Auto-remove after 5s
+      const notificationId = Date.now();
       setTimeout(() => {
-        get().removeNotification(Date.now());
+        get().removeNotification(notificationId);
       }, 5000);
+
+      // Refresh auth state if this is our team
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser && currentUser.team && currentUser.team._id === data.teamId) {
+        useAuthStore.getState().checkAuth();
+      }
     });
 
     set({ socket });

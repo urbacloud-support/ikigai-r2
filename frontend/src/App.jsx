@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import TeamDashboard from './pages/TeamDashboard';
+import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Notifications from './components/Notifications';
 import useAuthStore from './store/authStore';
@@ -26,16 +27,17 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/admin" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <AdminDashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard" element={
-            <ProtectedRoute allowedRoles={['teamLeader', 'teamMember']}>
-              <TeamDashboard />
-            </ProtectedRoute>
-          } />
+          
+          <Route element={<ProtectedRoute allowedRoles={['admin']}><Layout /></ProtectedRoute>}>
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/teams" element={<AdminDashboard />} />
+            <Route path="/admin/events" element={<AdminDashboard />} />
+            <Route path="/admin/settings" element={<AdminDashboard />} />
+          </Route>
+          
+          <Route element={<ProtectedRoute allowedRoles={['teamLeader', 'teamMember']}><Layout /></ProtectedRoute>}>
+            <Route path="/dashboard" element={<TeamDashboard />} />
+          </Route>
         </Routes>
       </div>
     </BrowserRouter>

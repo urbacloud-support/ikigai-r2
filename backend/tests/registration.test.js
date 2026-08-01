@@ -89,4 +89,32 @@ describe('Registration API', () => {
     expect(res.statusCode).toBe(400);
     expect(res.body.message).toBe('Team is already registered');
   });
+
+  test('POST /api/registration - Graceful handling of missing teamId', async () => {
+    // Create a leader without a team
+    const corruptedLeader = await User.create({
+      name: 'Corrupted Leader',
+      email: 'corrupt@test.com',
+      password: 'password',
+      role: 'teamLeader'
+    });
+    
+    // Login to get token
+    const resLogin = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'corrupt@test.com', password: 'password' });
+      
+    const corruptToken = resLogin.headers['set-cookie'][0].split(';')[0];
+    
+    const res = await request(app)
+      .post('/api/registration')
+      .set('Cookie', corruptToken)
+      .send({
+        trackPreferences: [trackId],
+        transactionId: 'TXN12345'
+      });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe('User does not belong to a team');
+  });
 });

@@ -1,6 +1,8 @@
 import Track from '../models/Track.js';
 import Team from '../models/Team.js';
 import User from '../models/User.js';
+import Event from '../models/Event.js';
+import bcrypt from 'bcryptjs';
 
 export const createTrack = async (req, res) => {
   try {
@@ -26,41 +28,80 @@ export const getTracks = async (req, res) => {
   }
 };
 
+export const getTeams = async (req, res) => {
+  try {
+    const teams = await Team.find({}).populate('leader', 'name email').populate('members', 'name email').populate('trackPreferences', 'title');
+    res.status(200).json({ success: true, teams });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
 export const createTeam = async (req, res) => {
   try {
-    const { teamName, leaderEmail, leaderName, leaderPassword } = req.body;
+    const { teamName, leaderName, leaderEmail, leaderPassword } = req.body;
+    
     if (!teamName || !leaderEmail || !leaderName || !leaderPassword) {
       return res.status(400).json({ success: false, message: 'Missing required fields' });
     }
-
-    // Check if leader email already exists
-    const existingUser = await User.findOne({ email: leaderEmail });
-    if (existingUser) {
-      return res.status(400).json({ success: false, message: 'Leader email already in use' });
-    }
-
-    // Create Leader
-    const leader = await User.create({
+    
+    // Hash password
+    const hashedPassword = await bcrypt.hash(leaderPassword, 10);
+    
+    // Create leader user first
+    const leader = new User({
       name: leaderName,
       email: leaderEmail,
-      password: leaderPassword,
-      role: 'teamLeader',
+      password: hashedPassword,
+      role: 'teamLeader'
     });
-
-    // Create Team
-    const team = await Team.create({
+    
+    await leader.save();
+    
+    // Create team
+    const team = new Team({
       teamName,
       leader: leader._id,
-      members: [], // Members will be added later or seeded
+      members: [leader._id]
     });
-
-    // Link Leader to Team
+    
+    await team.save();
+    
+    // Update leader with teamId
     leader.team = team._id;
     await leader.save();
-
+    
     res.status(201).json({ success: true, team, leader });
   } catch (error) {
-    console.error('Create Team Error:', error);
+    if (error.code === 11000) {
+      return res.status(400).json({ success: false, message: 'Email or Team name already exists' });
+    }
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+export const createEvent = async (req, res) => {
+  try {
+    const { title, description, date, type } = req.body;
+    const event = new Event({ 
+      title, 
+      description, 
+      scheduledTime: date,
+      type: type || 'general',
+      visibility: ['teamLeader', 'teamMember']
+    });
+    await event.save();
+    res.status(201).json({ success: true, event });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+export const getEvents = async (req, res) => {
+  try {
+    const events = await Event.find({});
+    res.status(200).json({ success: true, events });
+  } catch (error) {
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };

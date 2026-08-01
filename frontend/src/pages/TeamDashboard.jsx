@@ -1,12 +1,42 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import useAuthStore from '../store/authStore';
-import { FiLogOut, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
+import { FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { GripVertical } from 'lucide-react';
+
+function SortableTrackItem({ track, index }) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: track._id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+  
+  return (
+    <div 
+      ref={setNodeRef} 
+      style={style} 
+      className="flex items-center gap-3 p-4 rounded-xl border bg-white/80 border-white/50 shadow-sm"
+    >
+      <div {...attributes} {...listeners} className="cursor-grab hover:text-green-600 p-1">
+        <GripVertical size={20} className="text-slate-400" />
+      </div>
+      <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-green-100 text-green-700 font-bold rounded-full text-sm">
+        #{index + 1}
+      </div>
+      <div>
+        <p className="font-bold text-slate-800">{track.title}</p>
+        <p className="text-sm text-slate-600">{track.description}</p>
+      </div>
+    </div>
+  );
+}
 
 export default function TeamDashboard() {
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
   const [tracks, setTracks] = useState([]);
-  const [selectedTracks, setSelectedTracks] = useState([]);
   const [transactionId, setTransactionId] = useState('');
   const [message, setMessage] = useState('');
   const [isRegistered, setIsRegistered] = useState(user?.team?.isRegistered || false);
@@ -15,6 +45,12 @@ export default function TeamDashboard() {
   useEffect(() => {
     fetchTracks();
   }, []);
+
+  useEffect(() => {
+    if (user?.team?.isRegistered) {
+      setIsRegistered(true);
+    }
+  }, [user]);
 
   const fetchTracks = async () => {
     try {
@@ -27,25 +63,29 @@ export default function TeamDashboard() {
     }
   };
 
-  const toggleTrack = (trackId) => {
-    if (selectedTracks.includes(trackId)) {
-      setSelectedTracks(selectedTracks.filter(id => id !== trackId));
-    } else {
-      setSelectedTracks([...selectedTracks, trackId]);
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (active.id !== over.id) {
+      setTracks((items) => {
+        const oldIndex = items.findIndex((item) => item._id === active.id);
+        const newIndex = items.findIndex((item) => item._id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
     }
   };
 
   const handleRegistration = async (e) => {
     e.preventDefault();
-    if (selectedTracks.length === 0) {
-      setMessage('Please select at least one track preference.');
+    if (tracks.length === 0) {
+      setMessage('No tracks available to set preferences.');
       return;
     }
     
     setIsLoading(true);
     try {
+      const trackPreferences = tracks.map(t => t._id);
       const res = await axios.post('/api/registration', {
-        trackPreferences: selectedTracks,
+        trackPreferences,
         transactionId
       });
       if (res.data.success) {
@@ -59,20 +99,7 @@ export default function TeamDashboard() {
   };
 
   return (
-    <div className="min-h-screen p-4 sm:p-8 bg-gradient-to-br from-green-50 via-green-100 to-green-200 text-slate-800 font-sans">
-      <header className="flex justify-between items-center mb-8 glass-panel p-4 rounded-2xl">
-        <div>
-          <h1 className="text-2xl font-bold text-green-800">Team Portal</h1>
-          <p className="text-sm text-green-700">Welcome, {user?.name} ({user?.role === 'teamLeader' ? 'Leader' : 'Member'})</p>
-        </div>
-        <button 
-          onClick={logout}
-          className="flex items-center gap-2 px-4 py-2 bg-white/60 hover:bg-white/80 text-green-800 rounded-lg transition-all shadow-sm font-medium"
-        >
-          <FiLogOut /> Logout
-        </button>
-      </header>
-
+    <div className="w-full">
       <div className="max-w-2xl mx-auto glass-panel p-6 sm:p-8 rounded-3xl">
         {isRegistered ? (
           <div className="text-center py-10">
@@ -92,22 +119,15 @@ export default function TeamDashboard() {
 
             <form onSubmit={handleRegistration} className="space-y-6">
               <div>
-                <h3 className="font-bold text-slate-800 mb-3">1. Select Track Preferences</h3>
-                <div className="space-y-2">
-                  {tracks.map(track => (
-                    <label key={track._id} className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${selectedTracks.includes(track._id) ? 'bg-green-100 border-green-400' : 'bg-white/60 border-white/50 hover:bg-white/80'}`}>
-                      <input 
-                        type="checkbox" 
-                        className="w-5 h-5 text-green-600 rounded focus:ring-green-500"
-                        checked={selectedTracks.includes(track._id)}
-                        onChange={() => toggleTrack(track._id)}
-                      />
-                      <div>
-                        <p className="font-bold text-slate-800">{track.title}</p>
-                        <p className="text-sm text-slate-600">{track.description}</p>
-                      </div>
-                    </label>
-                  ))}
+                <h3 className="font-bold text-slate-800 mb-3">1. Rank Track Preferences (Drag to Reorder)</h3>
+                <div className="space-y-2 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                  <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <SortableContext items={tracks.map(t => t._id)} strategy={verticalListSortingStrategy}>
+                      {tracks.map((track, index) => (
+                        <SortableTrackItem key={track._id} track={track} index={index} />
+                      ))}
+                    </SortableContext>
+                  </DndContext>
                   {tracks.length === 0 && <p className="text-sm text-slate-500">No tracks available yet.</p>}
                 </div>
               </div>

@@ -10,6 +10,10 @@ export const submitRegistration = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid track preferences or transaction ID missing' });
     }
 
+    if (!req.user.teamId) {
+      return res.status(400).json({ success: false, message: 'User does not belong to a team' });
+    }
+
     const team = await Team.findById(req.user.teamId);
     
     if (!team) {
