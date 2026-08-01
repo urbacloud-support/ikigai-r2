@@ -3,17 +3,22 @@
 @theme {
   --font-sans: "Inter", system-ui, sans-serif;
   
-  --color-primary-500: #6366f1; /* Indigo 500 */
-  --color-primary-600: #4f46e5;
-  --color-accent-400: #22d3ee; /* Cyan 400 */
-  
-  --color-glass: rgba(255, 255, 255, 0.05);
-  --color-glass-border: rgba(255, 255, 255, 0.1);
+  --color-green-50: #fcf2ef;
+  --color-green-100: #fae4ea;
+  --color-green-200: #f5c7d8;
+  --color-green-300: #f09cb8;
+  --color-green-400: #eb749a;
+  --color-green-500: #e34e89;
+  --color-green-600: #ba3b78;
+  --color-green-700: #753a99;
+  --color-green-800: #582678;
+  --color-green-900: #42185c;
+  --color-green-950: #290a3d;
 }
 
 @layer utilities {
   .glass-panel {
-    @apply bg-white/5 backdrop-blur-md border border-white/10 shadow-xl;
+    @apply bg-white/40 backdrop-blur-xl border border-white/40 shadow-xl;
   }
   .animate-blob {
     animation: blob 7s infinite;
