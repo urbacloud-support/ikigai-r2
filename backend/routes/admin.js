@@ -4,11 +4,13 @@ import { requireAuth, authorizeRoles } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// All routes here require Admin role
+// Allow all authenticated users (including team leaders) to fetch tracks
+router.get('/tracks', requireAuth, getTracks);
+
+// Require Admin role for creation routes
 router.use(requireAuth, authorizeRoles('admin'));
 
 router.post('/tracks', createTrack);
-router.get('/tracks', getTracks);
 router.post('/teams', createTeam);
 
 export default router;
