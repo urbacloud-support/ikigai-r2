@@ -50,6 +50,7 @@ io.on('connection', (socket) => {
 
 import authRoutes from './routes/auth.js';
 import adminRoutes from './routes/admin.js';
+import registrationRoutes from './routes/registration.js';
 
 // Export io so controllers can emit events
 export { io };
@@ -57,6 +58,7 @@ export { io };
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/registration', registrationRoutes);
 
 // Basic health check route
 app.get('/api/health', (req, res) => {
