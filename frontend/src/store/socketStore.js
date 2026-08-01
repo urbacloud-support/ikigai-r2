@@ -8,7 +8,7 @@ const useSocketStore = create((set, get) => ({
   
   connect: () => {
     if (get().socket) return;
-    const socket = io(); // Connects to the same origin (via proxy /api if configured, or just / since socket.io auto-detects)
+    const socket = io(import.meta.env.VITE_API_URL || ''); // Connects to the remote backend or falls back to local
     
     socket.on('team_registered', (data) => {
       set((state) => ({

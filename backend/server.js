@@ -17,17 +17,19 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const server = http.createServer(app);
 
+const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
 // Setup Socket.io
 const io = new Server(server, {
   cors: {
-    origin: ['http://localhost:5173'], // Vite default frontend port
+    origin: [frontendUrl],
     credentials: true,
   },
 });
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:5173'],
+  origin: [frontendUrl],
   credentials: true,
 }));
 app.use(express.json());
