@@ -1,7 +1,0 @@
-temp/
-
-backend/.env
-frontend/.env
-node_modules/
-.DS_Store
-.agents/
