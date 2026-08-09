@@ -71,3 +71,7 @@ This file documents the journey and progress made on the Ikigai2 Round 2 platfor
 ### Phase 7: Evaluator Console
 - Built modular EvaluatorConsole UI.
 - Integrated with App.jsx protected routing.
+
+### Phase 8: Track Save Bug Fix
+- Wrote real endpoints for admin and auth routes.
+- Definitively fixed Round 1 Track corruption bug by strictly utilizing MongoDB atomic operators ($push, $set, $pull).
