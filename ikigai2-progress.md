@@ -58,3 +58,8 @@ This file documents the journey and progress made on the Ikigai2 Round 2 platfor
 - Created EventsView, UsersView, ProgressView.
 - Broken down Admin monolith into modular components: EventCard, TrackList, EvaluatorList.
 - Setup routing structure in App.jsx.
+
+### Phase 5: Frontend Shared Components
+- Rebuilt Header component with tailwind and lucide-react.
+- Rebuilt reusable ChangePasswordModal.
+- Rebuilt reusable ConfirmDeleteModal.
