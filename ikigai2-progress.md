@@ -63,3 +63,7 @@ This file documents the journey and progress made on the Ikigai2 Round 2 platfor
 - Rebuilt Header component with tailwind and lucide-react.
 - Rebuilt reusable ChangePasswordModal.
 - Rebuilt reusable ConfirmDeleteModal.
+
+### Phase 6: Frontend Auth & Routing
+- Created beautiful Tailwind Login screen.
+- Replaced legacy monolithic routing with Role-Based Protected Routes in App.jsx.

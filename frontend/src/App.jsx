@@ -1,7 +1,9 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { STORAGE_KEYS, ROLES } from './config/constants';
 
-// Admin Pages
+// Pages
+import Login from './pages/Login';
 import AdminLayout from './pages/admin/AdminLayout';
 import EventsView from './pages/admin/EventsView';
 import UsersView from './pages/admin/UsersView';
@@ -10,19 +12,38 @@ import SessionsView from './pages/admin/SessionsView';
 import RefreshmentsView from './pages/admin/RefreshmentsView';
 import InventoryView from './pages/admin/InventoryView';
 
-// Other Pages
 import JudgeDashboard from './pages/judge/JudgeDashboard';
 import StudentDashboard from './pages/student/StudentDashboard';
+
+// Custom Protected Route Wrapper
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  const token = sessionStorage.getItem(STORAGE_KEYS.TOKEN);
+  const userRole = sessionStorage.getItem(STORAGE_KEYS.ROLE);
+
+  if (!token) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (allowedRoles && !allowedRoles.includes(userRole)) {
+    // If they have a token but wrong role, send them back to login to prevent snooping
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Placeholder Login Route */}
-        <Route path="/" element={<div className="p-8 text-center"><h1 className="text-2xl font-bold">Login Screen (Phase 6)</h1><a href="/admin/events" className="text-blue-500 hover:underline">Skip to Admin Console for now</a></div>} />
+        <Route path="/" element={<Login />} />
 
-        {/* Modular Admin Routes */}
-        <Route path="/admin" element={<AdminLayout />}>
+        {/* Admin Routes - Strictly protected */}
+        <Route path="/admin" element={
+          <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+            <AdminLayout />
+          </ProtectedRoute>
+        }>
           <Route index element={<Navigate to="events" replace />} />
           <Route path="events" element={<EventsView />} />
           <Route path="users" element={<UsersView />} />
@@ -32,9 +53,21 @@ function App() {
           <Route path="inventory" element={<InventoryView />} />
         </Route>
         
-        {/* Placeholders for other roles */}
-        <Route path="/judge" element={<JudgeDashboard />} />
-        <Route path="/student" element={<StudentDashboard />} />
+        {/* Other Role Routes */}
+        <Route path="/judge" element={
+          <ProtectedRoute allowedRoles={[ROLES.JUDGE]}>
+            <JudgeDashboard />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/student" element={
+          <ProtectedRoute allowedRoles={[ROLES.STUDENT_COORDINATOR]}>
+            <StudentDashboard />
+          </ProtectedRoute>
+        } />
+        
+        {/* Catch-all */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
