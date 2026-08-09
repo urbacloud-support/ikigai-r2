@@ -31,3 +31,15 @@ This file documents the journey and progress made on the Ikigai2 Round 2 platfor
 
 ## Next Steps
 - Begin Phase 1: Project Scaffolding (`backend/` and `frontend/` initialization).
+
+### Phase 1: Project Scaffolding
+- Initialized Vite with Tailwind.
+- Initialized Node with dependencies.
+- Pushed cleanly to 'migration' branch.
+
+### Phase 2: Backend Foundation
+- Created .env template and strict JWT middleware.
+- Extracted all Mongoose models (Event, Evaluator, Judge, StudentCoordinator, TeamLeader) mapping to ikigai2.
+- Created modular route stubs.
+- Reassembled Express server with Socket.io.
+- Fixed package.json ES6 module support.
