@@ -48,3 +48,7 @@ This file documents the journey and progress made on the Ikigai2 Round 2 platfor
 - Configured Tailwind CSS with custom primary colors (fixed legacy UI bug).
 - Created centralized authFetch wrapper.
 - Created strict constants for roles and local storage keys.
+
+### Verification (Early Backend Tests)
+- Wrote and executed Jest test suites for Auth middleware and TeamLeader assessments schema.
+- All 7 tests passed successfully.
