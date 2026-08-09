@@ -14,6 +14,7 @@ import InventoryView from './pages/admin/InventoryView';
 
 import JudgeDashboard from './pages/judge/JudgeDashboard';
 import StudentDashboard from './pages/student/StudentDashboard';
+import EvaluatorConsole from './pages/evaluator/EvaluatorConsole';
 
 // Custom Protected Route Wrapper
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -54,6 +55,11 @@ function App() {
         </Route>
         
         {/* Other Role Routes */}
+        <Route path="/evaluator" element={
+          <ProtectedRoute allowedRoles={[ROLES.EVALUATOR]}>
+            <EvaluatorConsole />
+          </ProtectedRoute>
+        } />
         <Route path="/judge" element={
           <ProtectedRoute allowedRoles={[ROLES.JUDGE]}>
             <JudgeDashboard />
