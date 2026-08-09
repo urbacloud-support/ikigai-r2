@@ -1,0 +1,33 @@
+# Ikigai2 Progress & Context (IMPORTANT)
+
+This file documents the journey and progress made on the Ikigai2 Round 2 platform architecture. Any future agent (Antigravity or otherwise) working on this repository **MUST** read this file and `ikigai2-plan.md` before making any assumptions about the codebase.
+
+## What has been done so far:
+
+1. **Repository Reset**:
+   - The old `ikigai2` implementation was completely wiped from both the local workspace and the remote GitHub repository. We are starting Phase 1 with a completely clean slate.
+
+2. **Database Exploration & Decisions**:
+   - Explored the live databases (`ikigai` vs `ikigai2`).
+   - Discovered that the Round 2 `ikigai2` database only contains a `teams` collection (which holds Round 2 registrations) and an empty `events` and `tracks` state.
+   - **Crucial Decision**: The legacy `ikigai` database will **NOT** be queried. `ikigai2` relies exclusively on the `ikigai2` database.
+   - The Admin will recreate Events and Evaluators from scratch in the new `ikigai2` dashboard.
+   - The `Participant` and `Shortlisted` collections have been completely dropped from the architecture as they are no longer needed.
+
+3. **Schema Enhancements**:
+   - **Mailing Service**: The `AdminMailingService` from ikigai1's recent commits is being ported, but heavily modified to query only the `teams` collection in `ikigai2`.
+   - **Assessments**: To solve the "wrong room" evaluation problem, evaluators are now decoupled from strict track assignments. The `TeamLeader` (`teams`) schema now embeds an `assessments` object grouped by role (e.g., `evaluator: []`, `judge: []`) to seamlessly handle multiple assessments for a single team.
+
+4. **Role Clarifications**:
+   - `evaluator` replaces the old `sessionChair` role logic.
+   - `judge` is included as an empty placeholder model and route to accommodate future feature additions.
+   - `studentCoordinator` is included as a placeholder.
+   - `teamLeader` manages the `teams` collection.
+
+5. **Codebase Hygiene**:
+   - The bloated 800-line `UsersView.jsx` from `ikigai1` is slated to be refactored into smaller modular components.
+   - Tailwind's legacy `green-*` colors (which render pink/purple) are being globally renamed to `primary-*`.
+   - WebSockets are restricted to `tracks` features for now.
+
+## Next Steps
+- Begin Phase 1: Project Scaffolding (`backend/` and `frontend/` initialization).
