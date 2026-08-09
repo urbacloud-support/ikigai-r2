@@ -52,3 +52,9 @@ This file documents the journey and progress made on the Ikigai2 Round 2 platfor
 ### Verification (Early Backend Tests)
 - Wrote and executed Jest test suites for Auth middleware and TeamLeader assessments schema.
 - All 7 tests passed successfully.
+
+### Phase 4: Frontend Admin Console
+- Scaffolded AdminLayout with unified sidebar routing.
+- Created EventsView, UsersView, ProgressView.
+- Broken down Admin monolith into modular components: EventCard, TrackList, EvaluatorList.
+- Setup routing structure in App.jsx.
