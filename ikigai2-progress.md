@@ -41,6 +41,10 @@
 - Rewrote `App.jsx` to implement a secure, role-based Router using `<ProtectedRoute>`.
 - Developed `Login.jsx` with a responsive, glassmorphic UI prioritizing mobile devices.
 
+### Phase 7: Frontend Shared UI
+- Created `Header.jsx` with a responsive nav bar, dynamic role labels, and a mobile hamburger menu.
+- Created `ChangePasswordModal.jsx` utilizing modern backdrop-blur and zoom-in entry animations.
+
 
 
 

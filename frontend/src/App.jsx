@@ -3,8 +3,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 
+import AdminDashboard from './pages/admin/AdminDashboard';
+
 // Placeholder dashboards (will build in subsequent phases)
-const AdminDashboard = () => <div className="p-8 text-center text-primary-800 text-xl font-bold">Admin Dashboard Stub</div>;
 const EvaluatorDashboard = () => <div className="p-8 text-center text-primary-800 text-xl font-bold">Evaluator Dashboard Stub</div>;
 const TeamLeaderDashboard = () => <div className="p-8 text-center text-primary-800 text-xl font-bold">Team Leader Dashboard Stub</div>;
 
