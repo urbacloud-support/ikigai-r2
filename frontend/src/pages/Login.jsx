@@ -32,9 +32,9 @@ export default function Login() {
       <div className="w-full max-w-md bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/40">
         <div className="text-center mb-10">
           <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-primary-900 mb-2">
-            Ikigai '26
+            IKIGAI
           </h1>
-          <p className="text-gray-500 font-medium">Welcome back! Please sign in.</p>
+          <p className="text-gray-500 font-medium">Welcome back!</p>
         </div>
 
         {error && (

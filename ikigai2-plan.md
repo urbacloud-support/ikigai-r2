@@ -1,4 +1,29 @@
-# Ikigai2 — Complete Implementation Plan
+# Ikigai2 — Master Architecture Plan (V2 Native Update)
+
+> [!CAUTION]
+> **LEGACY PLAN DEPRECATED**
+> The implementation plan detailed below (from Phase 1 to Phase 10) was the original strategy to sync databases between `ikigai` and `ikigai2`. **This approach was abandoned.** We performed a complete hard-reset of the codebase and rebuilt the platform to operate entirely natively on the `ikigai2` database.
+> The original plan is retained below strictly for historical record.
+
+## What We Actually Built (Current Native V2 Architecture)
+- **Stack**: MERN (MongoDB, Express, React, Node.js) with Vite and TailwindCSS v4.
+- **Database**: Single Source of Truth is the `ikigai2` database. No cross-database synchronization.
+- **Authentication**: JWT-based. All users (Admins, Evaluators, Judges, Team Leaders) authenticate exclusively via a unified `users` collection.
+- **Data Models**:
+  - **Team (`teams`)**: Stores all participant details natively. Embeds an `assessments` array to store evaluation scores directly on the team document.
+  - **Event (`events`)**: Represents physical hackathon events. Natively embeds a copy of `selectedTracks` to isolate tracks per-event and prevent cross-contamination bugs.
+- **Frontend Paradigms**:
+  - **Mobile-First Design**: Bottom Navigation Bars for mobile, Sidebars/Top Tabs for desktop.
+  - **Premium UI**: Pink/Purple rich gradients utilizing Ikigai 1 design tokens found in `index.css`.
+  - **Global Auth**: Managed via `AuthContext.jsx`. The API wrapper (`config/api.js`) automatically attaches the `ikigai_token`.
+- **Key Dashboards Built**:
+  - **Admin Progress**: Complex UI rendering Event Picker -> Horizontal Track Selector -> Nested Evaluator Sidebar -> Evaluator Task Details.
+  - **Evaluator Console**: Evaluators submit range-based scores (0-10) for 5 criteria, aggregating into a `totalScore` directly patched to the Team's `assessments` array.
+
+---
+*(Below is the original, deprecated implementation plan)*
+
+# Ikigai2 — Complete Implementation Plan (LEGACY)
 
 ## Background & Context
 
