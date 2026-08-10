@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogIn } from 'lucide-react';
+import { LogIn, Eye, EyeOff } from 'lucide-react';
+import logo from '../assets/ikigai.png';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
@@ -20,7 +22,7 @@ export default function Login() {
     const result = await login(email, password);
     
     if (result.success) {
-      navigate('/dashboard'); 
+      navigate('/'); 
     } else {
       setError(result.message || 'Login failed. Please try again.');
     }
@@ -31,9 +33,7 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/40">
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-primary-900 mb-2">
-            IKIGAI
-          </h1>
+          <img src={logo} alt="IKIGAI Logo" className="h-14 w-auto mx-auto mb-4" />
           <p className="text-gray-500 font-medium">Welcome back!</p>
         </div>
 
@@ -50,7 +50,7 @@ export default function Login() {
               type="email"
               required
               className="w-full px-5 py-4 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:ring-2 focus:ring-primary-400 focus:border-transparent outline-none transition-all duration-200"
-              placeholder="admin@csit.in"
+              placeholder="user@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
@@ -58,14 +58,23 @@ export default function Login() {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
-            <input
-              type="password"
-              required
-              className="w-full px-5 py-4 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:ring-2 focus:ring-primary-400 focus:border-transparent outline-none transition-all duration-200"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                className="w-full px-5 py-4 pr-12 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:ring-2 focus:ring-primary-400 focus:border-transparent outline-none transition-all duration-200"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
 
           <button

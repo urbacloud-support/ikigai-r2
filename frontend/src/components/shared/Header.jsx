@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { LogOut, User as UserIcon, Shield, Menu, X } from 'lucide-react';
 import { ROLE_LABELS } from '../../config/constants';
+import logo from '../../assets/ikigai.png';
 
 export default function Header() {
   const { user, logout } = useAuth();
@@ -13,9 +14,7 @@ export default function Header() {
         <div className="flex justify-between items-center h-16">
           
           <div className="flex-shrink-0 flex items-center">
-            <h1 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-primary-800">
-              Ikigai
-            </h1>
+            <img src={logo} alt="IKIGAI" className="h-8 w-auto" />
           </div>
 
           <div className="hidden md:flex items-center space-x-6">
