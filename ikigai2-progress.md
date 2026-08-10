@@ -45,6 +45,11 @@
 - Created `Header.jsx` with a responsive nav bar, dynamic role labels, and a mobile hamburger menu.
 - Created `ChangePasswordModal.jsx` utilizing modern backdrop-blur and zoom-in entry animations.
 
+### Phase 8: Admin Events & Users (Mobile-First)
+- Created `AdminDashboard.jsx` featuring a desktop sidebar/top-tabs architecture and a native-like mobile bottom tab navigation bar.
+- Implemented `EventsView.jsx` leveraging TailwindCSS grid to list event cards dynamically from the database.
+- Implemented `UsersView.jsx` incorporating a responsive split design: stacked cards for mobile, structured tables for desktop.
+
 
 
 

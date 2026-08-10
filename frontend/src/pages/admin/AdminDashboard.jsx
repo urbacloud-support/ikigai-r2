@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Header from '../../components/shared/Header';
 import EventsView from './EventsView';
 import UsersView from './UsersView';
+import ProgressView from './ProgressView';
 import { Calendar, Users, Activity } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -42,7 +43,7 @@ export default function AdminDashboard() {
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {activeTab === 'events' && <EventsView />}
         {activeTab === 'users' && <UsersView />}
-        {activeTab === 'progress' && <div className="p-8 text-center text-gray-500">Progress View Stub (Phase 9)</div>}
+        {activeTab === 'progress' && <ProgressView />}
       </main>
 
       {/* Mobile Bottom Navigation */}
