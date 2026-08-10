@@ -21,3 +21,26 @@ body {
   color: #1f2937;
   min-height: 100vh;
 }
+
+@layer base {
+  /* Apply GitHub-style interaction to all buttons and button-like links */
+  button, 
+  [type='button'], 
+  [type='submit'] {
+    @apply transition-all duration-150;
+  }
+  
+  /* Lighter on hover */
+  button:hover, 
+  [type='button']:hover, 
+  [type='submit']:hover {
+    @apply brightness-110;
+  }
+
+  /* Even lighter on click/active + subtle press effect */
+  button:active, 
+  [type='button']:active, 
+  [type='submit']:active {
+    @apply brightness-125 scale-[0.98];
+  }
+}
