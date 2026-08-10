@@ -39,7 +39,12 @@
 ### Phase 6: Frontend Auth & Routing
 - Created `AuthContext.jsx` to manage global user state and authentication logic.
 - Rewrote `App.jsx` to implement a secure, role-based Router using `<ProtectedRoute>`.
-- Developed `Login.jsx` with a responsive, glassmorphic UI prioritizing mobile devices.
+- Developed a dynamic nested view showcasing assigned Teams, their projects, and M1/M2 mock task completion statuses.
+
+### Phase 10: Evaluator Console (Mobile-First)
+- Implemented `EvaluatorConsole.jsx` allowing Judges/Evaluators to score teams across native `ASSESSMENT_CRITERIA`.
+- Integrated dynamic range sliders resulting in automated `totalScore` aggregation.
+- Implemented a smart mobile UX that switches views automatically when a team is selected for evaluation.
 
 ### Phase 7: Frontend Shared UI
 - Created `Header.jsx` with a responsive nav bar, dynamic role labels, and a mobile hamburger menu.

@@ -4,9 +4,9 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 
 import AdminDashboard from './pages/admin/AdminDashboard';
+import EvaluatorConsole from './pages/evaluator/EvaluatorConsole';
 
 // Placeholder dashboards (will build in subsequent phases)
-const EvaluatorDashboard = () => <div className="p-8 text-center text-primary-800 text-xl font-bold">Evaluator Dashboard Stub</div>;
 const TeamLeaderDashboard = () => <div className="p-8 text-center text-primary-800 text-xl font-bold">Team Leader Dashboard Stub</div>;
 
 const DashboardRouter = () => {
@@ -19,7 +19,7 @@ const DashboardRouter = () => {
       return <AdminDashboard />;
     case 'evaluator':
     case 'judge':
-      return <EvaluatorDashboard />;
+      return <EvaluatorConsole />;
     case 'teamLeader':
       return <TeamLeaderDashboard />;
     default:
