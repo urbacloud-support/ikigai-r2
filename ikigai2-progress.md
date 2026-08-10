@@ -36,6 +36,11 @@
 - Created `config/api.js` wrapper to seamlessly inject the `ikigai_token` JWT into all backend requests.
 - Created `config/constants.js` to standardize UI labels and criteria.
 
+### Phase 6: Frontend Auth & Routing
+- Created `AuthContext.jsx` to manage global user state and authentication logic.
+- Rewrote `App.jsx` to implement a secure, role-based Router using `<ProtectedRoute>`.
+- Developed `Login.jsx` with a responsive, glassmorphic UI prioritizing mobile devices.
+
 
 
 
