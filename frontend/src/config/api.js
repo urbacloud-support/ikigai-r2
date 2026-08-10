@@ -1,0 +1,15 @@
+export const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
+
+export function authHeaders() {
+  const token = localStorage.getItem('ikigai_token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+export async function authFetch(url, options = {}) {
+  const headers = {
+    'Content-Type': 'application/json',
+    ...authHeaders(),
+    ...(options.headers || {}),
+  };
+  return fetch(`${API_BASE}${url}`, { ...options, headers });
+}

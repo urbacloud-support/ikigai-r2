@@ -1,0 +1,23 @@
+@import "tailwindcss";
+@reference tailwindcss;
+
+@theme {
+  --color-primary-50: #fcf2ef;
+  --color-primary-100: #fae4ea;
+  --color-primary-200: #f5c7d8;
+  --color-primary-300: #f09cb8;
+  --color-primary-400: #eb749a;
+  --color-primary-500: #e34e89;
+  --color-primary-600: #ba3b78;
+  --color-primary-700: #753a99;
+  --color-primary-800: #582678;
+  --color-primary-900: #42185c;
+  --color-primary-950: #290a3d;
+}
+
+body {
+  background: linear-gradient(to bottom right, #fcf2ef, #fae4ea, #f5c7d8);
+  font-family: system-ui, sans-serif;
+  color: #1f2937;
+  min-height: 100vh;
+}
