@@ -17,6 +17,21 @@ export const AuthProvider = ({ children }) => {
       setUser(JSON.parse(storedUser));
     }
     setLoading(false);
+
+    // Listen for changes in localStorage from other tabs
+    const handleStorageChange = (e) => {
+      if (e.key === 'ikigai_token') {
+        if (!e.newValue) {
+          setUser(null);
+        } else {
+          const storedUser = localStorage.getItem('ikigai_user');
+          if (storedUser) setUser(JSON.parse(storedUser));
+        }
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const login = async (email, password) => {

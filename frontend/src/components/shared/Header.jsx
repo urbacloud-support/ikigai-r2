@@ -10,11 +10,11 @@ export default function Header() {
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+      <div className="w-full px-4 md:px-6">
+        <div className="flex justify-between items-center h-16 md:h-20">
           
-          <div className="flex-shrink-0 flex items-center">
-            <img src={logo} alt="IKIGAI" className="h-8 w-auto" />
+          <div className="flex-shrink-0 flex items-center min-w-0">
+            <img src={logo} alt="IKIGAI" className="h-10 md:h-14 object-contain w-auto max-w-full" />
           </div>
 
           <div className="hidden md:flex items-center space-x-6">
