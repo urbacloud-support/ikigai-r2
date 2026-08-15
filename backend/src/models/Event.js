@@ -2,9 +2,15 @@ import mongoose from 'mongoose';
 
 const embeddedTrackSchema = new mongoose.Schema({
   trackId: { type: mongoose.Schema.Types.ObjectId, required: true },
+  code: { type: String, required: true },
   title: { type: String, required: true },
-  description: { type: String },
-  isLocked: { type: Boolean, default: false }
+  description: { type: String }
+});
+
+const criteriaSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  maxMarks: { type: Number, default: 10 },
+  inputType: { type: String, default: 'number', enum: ['number', 'text', 'boolean'] },
 });
 
 const eventSchema = new mongoose.Schema({
@@ -12,9 +18,8 @@ const eventSchema = new mongoose.Schema({
   description: { type: String },
   date: { type: Date, required: true },
   location: { type: String },
-  isRegistrationOpen: { type: Boolean, default: false },
   selectedTracks: [embeddedTrackSchema],
-  assessmentCriteria: [{ type: String }]
+  criteria: { type: [criteriaSchema], default: [] }
 }, { timestamps: true });
 
 export default mongoose.model('Event', eventSchema, 'events');

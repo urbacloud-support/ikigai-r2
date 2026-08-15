@@ -117,5 +117,8 @@
 - **Modified**: `backend/src/models/User.js` - Added evaluator-specific fields (`isLocked`, `assignedTrackId`, `assignedEventId`) to control assessment locking and track allocation.
 - **Modified**: `backend/src/models/Team.js` - Added new fields (`teamName`, `assignedTrack`, `assignedProblemStatement`, `trackPreferences`) to natively align with live production DB data. Refactored `assessmentSchema` from a `Map` of criteria scores to an ordered array of `Mixed` type to handle assessment entries properly, and added `mode` enum (`'criteria'`, `'absent'`).
 
+### Phase 3: Event Schema (assessment-features branch)
+- **Modified**: `backend/src/models/Event.js` - Updated `embeddedTrackSchema` to include the `code` string and removed `isLocked`. Replaced simple `assessmentCriteria` strings with a detailed `criteriaSchema` (`name`, `maxMarks`, `inputType`).
+
 
 
