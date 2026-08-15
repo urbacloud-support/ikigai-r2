@@ -11,7 +11,10 @@ const userSchema = new mongoose.Schema({
   },
   teamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
   resetPasswordToken: String,
-  resetPasswordExpires: Date
+  resetPasswordExpires: Date,
+  isLocked: { type: Boolean, default: false },
+  assignedTrackId: { type: String, default: null },
+  assignedEventId: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', default: null }
 }, { timestamps: true });
 
 export default mongoose.model('User', userSchema, 'users');
