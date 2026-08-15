@@ -120,5 +120,9 @@
 ### Phase 3: Event Schema (assessment-features branch)
 - **Modified**: `backend/src/models/Event.js` - Updated `embeddedTrackSchema` to include the `code` string and removed `isLocked`. Replaced simple `assessmentCriteria` strings with a detailed `criteriaSchema` (`name`, `maxMarks`, `inputType`).
 
+### Phase 4: Admin Backend Routes (assessment-features branch)
+- **Modified**: `backend/src/controllers/admin.controller.js` - Added full CRUD operations for Events and Users. Added endpoints to define criteria, assign evaluators to tracks, toggle locks, and lock all evaluators via WebSockets.
+- **Modified**: `backend/src/routes/admin.routes.js` - Wired up all new controller endpoints.
+
 
 

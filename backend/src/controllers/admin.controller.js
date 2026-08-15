@@ -2,10 +2,10 @@ import Event from '../models/Event.js';
 import User from '../models/User.js';
 import Team from '../models/Team.js';
 import Track from '../models/Track.js';
+import { hashPassword } from '../utils/hash.js';
 
-// @desc    Get all events
-// @route   GET /api/admin/events
-// @access  Private/Admin
+// --- Events ---
+
 export const getEvents = async (req, res) => {
   try {
     const events = await Event.find({});
@@ -15,13 +15,9 @@ export const getEvents = async (req, res) => {
   }
 };
 
-// @desc    Create an event
-// @route   POST /api/admin/events
-// @access  Private/Admin
 export const createEvent = async (req, res) => {
   const { title, description, date, location, trackIds } = req.body;
   try {
-    // If no tracks specified, select all global tracks by default
     let query = {};
     if (trackIds && trackIds.length > 0) {
       query = { _id: { $in: trackIds } };
@@ -30,18 +26,12 @@ export const createEvent = async (req, res) => {
     
     const selectedTracks = globalTracks.map(t => ({
       trackId: t._id,
+      code: t.code,
       title: t.title,
       description: t.description
     }));
 
-    const event = new Event({
-      title,
-      description,
-      date,
-      location,
-      selectedTracks
-    });
-
+    const event = new Event({ title, description, date, location, selectedTracks });
     const createdEvent = await event.save();
     res.status(201).json(createdEvent);
   } catch (error) {
@@ -49,9 +39,87 @@ export const createEvent = async (req, res) => {
   }
 };
 
-// @desc    Get all users (for Admin Users Tab)
-// @route   GET /api/admin/users
-// @access  Private/Admin
+export const updateEvent = async (req, res) => {
+  const { title, description, date } = req.body;
+  try {
+    const event = await Event.findById(req.params.id);
+    if (!event) return res.status(404).json({ message: 'Event not found' });
+    
+    if (title) event.title = title;
+    if (description !== undefined) event.description = description;
+    if (date) event.date = date;
+    
+    const updatedEvent = await event.save();
+    res.json(updatedEvent);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const deleteEvent = async (req, res) => {
+  try {
+    const event = await Event.findByIdAndDelete(req.params.id);
+    if (!event) return res.status(404).json({ message: 'Event not found' });
+    
+    // Unset assignedEventId for any evaluators
+    await User.updateMany({ assignedEventId: event._id }, { $set: { assignedEventId: null, assignedTrackId: null } });
+    
+    res.json({ message: 'Event removed' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const updateEventCriteria = async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+    if (!event) return res.status(404).json({ message: 'Event not found' });
+    
+    event.criteria = req.body.criteria || [];
+    const updatedEvent = await event.save();
+    res.json(updatedEvent);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getEventEvaluators = async (req, res) => {
+  try {
+    const evaluators = await User.find({ 
+      assignedEventId: req.params.id, 
+      role: { $in: ['evaluator', 'judge'] } 
+    }).select('-password');
+    res.json(evaluators);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const lockAllEvaluators = async (req, res) => {
+  const { locked } = req.body;
+  try {
+    const evaluators = await User.find({ 
+      assignedEventId: req.params.id, 
+      role: { $in: ['evaluator', 'judge'] } 
+    });
+    
+    const io = req.app.get('io');
+    for (const evalUser of evaluators) {
+      evalUser.isLocked = locked;
+      await evalUser.save();
+      if (io) {
+        io.to(`evaluator:${evalUser._id}`).emit('evaluator-lock-changed', { isLocked: locked });
+      }
+    }
+    
+    res.json({ message: `All evaluators ${locked ? 'locked' : 'unlocked'}` });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// --- Users ---
+
 export const getUsers = async (req, res) => {
   try {
     const users = await User.find({}).select('-password');
@@ -61,9 +129,111 @@ export const getUsers = async (req, res) => {
   }
 };
 
-// @desc    Get all tracks globally
-// @route   GET /api/admin/tracks
-// @access  Private/Admin
+export const createUser = async (req, res) => {
+  const { name, email, role } = req.body;
+  try {
+    const userExists = await User.findOne({ email });
+    if (userExists) return res.status(400).json({ message: 'User already exists' });
+
+    // Generate random 8 char password
+    const generatedPassword = Math.random().toString(36).slice(-8);
+    
+    const user = await User.create({
+      name,
+      email,
+      role,
+      password: hashPassword(generatedPassword)
+    });
+
+    const userObj = user.toObject();
+    delete userObj.password;
+    
+    res.status(201).json({ user: userObj, generatedPassword });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const updateUser = async (req, res) => {
+  const { name, email, role } = req.body;
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    if (name) user.name = name;
+    if (email) user.email = email;
+    if (role) user.role = role;
+    
+    const updatedUser = await user.save();
+    const userObj = updatedUser.toObject();
+    delete userObj.password;
+    
+    res.json(userObj);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const deleteUser = async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json({ message: 'User removed' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const assignEvaluator = async (req, res) => {
+  const { trackCode, eventId } = req.body;
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    user.assignedTrackId = trackCode;
+    user.assignedEventId = eventId;
+    await user.save();
+    
+    res.json({ message: 'Evaluator assigned' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const toggleEvaluatorLock = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    user.isLocked = !user.isLocked;
+    await user.save();
+    
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`evaluator:${user._id}`).emit('evaluator-lock-changed', { isLocked: user.isLocked });
+    }
+    
+    res.json({ message: 'Lock toggled', isLocked: user.isLocked });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// --- Teams ---
+
+export const getTeams = async (req, res) => {
+  const { trackCode } = req.query;
+  try {
+    const query = trackCode ? { assignedTrack: trackCode } : {};
+    const teams = await Team.find(query);
+    res.json(teams);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// --- Tracks ---
+
 export const getGlobalTracks = async (req, res) => {
   try {
     const tracks = await Track.find({});
