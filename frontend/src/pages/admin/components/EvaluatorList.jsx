@@ -8,6 +8,10 @@ export default function EvaluatorList({ event, trackCode, onRefresh }) {
   
   // Inline form state
   const [isAdding, setIsAdding] = useState(false);
+  const [addMode, setAddMode] = useState('existing'); // 'existing' or 'new'
+  const [allEvaluators, setAllEvaluators] = useState([]);
+  const [selectedExistingId, setSelectedExistingId] = useState('');
+  
   const [form, setForm] = useState({ title: 'Mr.', firstName: '', lastName: '', email: '', phone: '' });
   const [addLoading, setAddLoading] = useState(false);
   const [error, setError] = useState('');
@@ -20,6 +24,13 @@ export default function EvaluatorList({ event, trackCode, onRefresh }) {
         // Filter client-side by track code
         const trackEvaluators = data.filter(e => e.assignedTrackId === trackCode);
         setEvaluators(trackEvaluators);
+        
+        // Fetch all users to find existing evaluators
+        const usersRes = await authFetch('/admin/users');
+        if (usersRes.ok) {
+          const allUsers = await usersRes.json();
+          setAllEvaluators(allUsers.filter(u => u.role === 'evaluator'));
+        }
       }
     } catch (err) {
       console.error(err);
@@ -77,6 +88,32 @@ export default function EvaluatorList({ event, trackCode, onRefresh }) {
     }
   };
 
+  const handleAssignExisting = async () => {
+    if (!selectedExistingId) return;
+    setAddLoading(true);
+    setError('');
+    
+    try {
+      const assignRes = await authFetch(`/admin/users/${selectedExistingId}/assign`, {
+        method: 'PUT',
+        body: JSON.stringify({ trackCode, eventId: event._id })
+      });
+
+      if (!assignRes.ok) {
+        throw new Error('Failed to assign evaluator');
+      }
+
+      setSelectedExistingId('');
+      setIsAdding(false);
+      fetchEvaluators();
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setAddLoading(false);
+    }
+  };
+
   if (loading) return <div className="p-4 flex justify-center"><Loader2 className="animate-spin text-primary-400" /></div>;
 
   return (
@@ -93,45 +130,89 @@ export default function EvaluatorList({ event, trackCode, onRefresh }) {
       </div>
 
       {isAdding && (
-        <form onSubmit={handleAdd} className="p-4 bg-primary-50/50 border-b border-gray-100">
-          {error && <div className="text-red-600 text-xs mb-3">{error}</div>}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-            <select
-              value={form.title}
-              onChange={e => setForm({...form, title: e.target.value})}
-              className="text-sm border-gray-200 rounded-lg"
-            >
-              <option>Mr.</option>
-              <option>Mrs.</option>
-              <option>Ms.</option>
-              <option>Dr.</option>
-              <option>Prof.</option>
-            </select>
-            <input 
-              placeholder="First Name" required
-              value={form.firstName} onChange={e => setForm({...form, firstName: e.target.value})}
-              className="text-sm border-gray-200 rounded-lg"
-            />
-            <input 
-              placeholder="Last Name"
-              value={form.lastName} onChange={e => setForm({...form, lastName: e.target.value})}
-              className="text-sm border-gray-200 rounded-lg"
-            />
-            <input 
-              type="email" placeholder="Email" required
-              value={form.email} onChange={e => setForm({...form, email: e.target.value})}
-              className="text-sm border-gray-200 rounded-lg"
-            />
-          </div>
-          <div className="mt-3 flex justify-end">
+        <div className="p-4 bg-primary-50/50 border-b border-gray-100 space-y-4">
+          <div className="flex gap-2 mb-2">
             <button 
-              type="submit" disabled={addLoading}
-              className="btn btn-primary btn-sm"
+              type="button" 
+              onClick={() => setAddMode('existing')}
+              className={`btn flex-1 ${addMode === 'existing' ? 'btn-primary' : 'btn-secondary'}`}
             >
-              {addLoading && <Loader2 size={14} className="animate-spin" />} Save
+              Select Existing
+            </button>
+            <button 
+              type="button" 
+              onClick={() => setAddMode('new')}
+              className={`btn flex-1 ${addMode === 'new' ? 'btn-primary' : 'btn-secondary'}`}
+            >
+              Create New
             </button>
           </div>
-        </form>
+
+          {error && <div className="text-red-600 text-xs">{error}</div>}
+
+          {addMode === 'existing' ? (
+            <div className="flex items-center gap-2">
+              <select 
+                className="flex-1 text-sm border-gray-200 rounded-lg py-2 px-3"
+                value={selectedExistingId}
+                onChange={e => setSelectedExistingId(e.target.value)}
+              >
+                <option value="">-- Select Evaluator --</option>
+                {allEvaluators
+                  .filter(u => !evaluators.some(ev => ev._id === u._id))
+                  .map(u => (
+                  <option key={u._id} value={u._id}>{u.name} ({u.email})</option>
+                ))}
+              </select>
+              <button 
+                onClick={handleAssignExisting}
+                disabled={addLoading || !selectedExistingId}
+                className="btn btn-primary btn-sm h-[38px]"
+              >
+                {addLoading && <Loader2 size={14} className="animate-spin" />} Assign
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleAdd}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                <select
+                  value={form.title}
+                  onChange={e => setForm({...form, title: e.target.value})}
+                  className="text-sm border-gray-200 rounded-lg"
+                >
+                  <option>Mr.</option>
+                  <option>Mrs.</option>
+                  <option>Ms.</option>
+                  <option>Dr.</option>
+                  <option>Prof.</option>
+                </select>
+                <input 
+                  placeholder="First Name" required
+                  value={form.firstName} onChange={e => setForm({...form, firstName: e.target.value})}
+                  className="text-sm border-gray-200 rounded-lg"
+                />
+                <input 
+                  placeholder="Last Name"
+                  value={form.lastName} onChange={e => setForm({...form, lastName: e.target.value})}
+                  className="text-sm border-gray-200 rounded-lg"
+                />
+                <input 
+                  type="email" placeholder="Email" required
+                  value={form.email} onChange={e => setForm({...form, email: e.target.value})}
+                  className="text-sm border-gray-200 rounded-lg"
+                />
+              </div>
+              <div className="mt-3 flex justify-end">
+                <button 
+                  type="submit" disabled={addLoading}
+                  className="btn btn-primary btn-sm"
+                >
+                  {addLoading && <Loader2 size={14} className="animate-spin" />} Save
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       )}
 
       {evaluators.length === 0 && !isAdding ? (
