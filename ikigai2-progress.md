@@ -147,5 +147,10 @@
 - **Created Components**: `EvaluatorSidebar.jsx`, `ProgressStats.jsx`, `TeamGrid.jsx` in `pages/admin/components/`.
 - **Modified**: `pages/admin/ProgressView.jsx` - Rebuilt to fetch live teams based on selected track code. Displays an evaluator sidebar allowing admins to individually lock/unlock evaluators, and a global lock/unlock all button. Team Grid shows precise score amounts and 'Absent' badges in real-time by listening to the `assessment-saved` socket event. Export CSV natively supported based on fetched data.
 
-
-
+### Post-Phase Adjustments & Bug Fixes (assessment-features branch)
+- **Evaluator Passwords**: Updated `createUser` logic in `admin.controller.js` to deterministically generate passwords based on the user's first name (e.g. "Mr. John Doe" -> `john123`).
+- **Evaluator Assignment**: Enhanced `EvaluatorList.jsx` to allow assigning existing evaluator users to a track via a dropdown, rather than only allowing the creation of new evaluators.
+- **Evaluator Console UI**: 
+  - Added `AssessmentSummary.jsx` component and a fixed, floating "View Summary" button in `EvaluatorConsole.jsx` so evaluators can easily review all teams they've scored.
+  - Fixed a React child rendering error in `AssessmentSummary` by ensuring criteria objects are parsed down to primitive score values, appropriately formatting booleans as Yes/No.
+- **Dummy Data**: Created `temp/seed_dummy_teams.js` to seed 15 dummy teams (3 per track) with distinct `[DUMMY]` naming for testing the Progress and Evaluator Console views.
