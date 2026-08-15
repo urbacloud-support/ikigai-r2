@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Mail, Phone, MoreVertical, Loader2 } from 'lucide-react';
+import { UserPlus, Mail, Phone, MoreVertical, Loader2, X } from 'lucide-react';
 import { authFetch } from '../../../config/api';
 
 export default function EvaluatorList({ event, trackCode, onRefresh }) {
