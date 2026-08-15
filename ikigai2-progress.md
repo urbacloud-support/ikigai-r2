@@ -138,5 +138,9 @@
 - **Created**: `ProblemStatementsView.jsx` - New page that fetches all teams and groups them visually by `assignedTrack` and `assignedProblemStatement`.
 - **Modified**: `AdminLayout.jsx` & `App.jsx` - Added routing and sidebar navigation for the new Problem Statements page.
 
+### Phase 8: Frontend Evaluator Console (assessment-features branch)
+- **Created Components**: `LockBanner.jsx`, `TrackCard.jsx`, `AssessmentModal.jsx`. 
+- **Modified**: `EvaluatorConsole.jsx` - Completely rebuilt. Uses dynamic schema for criteria scoring (instead of hardcoded), supports "Absent" mode natively, handles WebSocket real-time lock updates, and presents teams in a grid of track cards rather than a 2-pane list view. All inputs are completely disabled and greyed out when `user.isLocked` is true.
+
 
 
