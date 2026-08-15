@@ -55,6 +55,63 @@
 - Implemented `EventsView.jsx` leveraging TailwindCSS grid to list event cards dynamically from the database.
 - Implemented `UsersView.jsx` incorporating a responsive split design: stacked cards for mobile, structured tables for desktop.
 
+---
+
+## Pending: Assessment Features (assessment-features branch)
+
+*Planning session completed on 2026-08-16. Implementation not yet started.*
+
+### Architecture Decisions Made (via /grill-me)
+
+- **Tracks**: 5 static tracks sourced from R1 "ikigai Hackathon 2026 Round-2" event. Codes `'001'`–`'005'` match the existing `Team.assignedTrack` string values. A `code` field will be added to the `Track` model as the universal join key.
+- **Track titles**: `001` SportsTech, `002` NextGenAI, `003` Cyber Security, `004` AgriTech, `005` Sustainability.
+- **Default criteria** (from R1 Round-2 event): Innovation & Originality, Technical Complexity, Business & Market Viability, User Experience & Design, Presentation & Q&A — all 10 marks each.
+- **Evaluator lock**: `isLocked: Boolean` on the User doc, toggled per-evaluator by admin, pushed via WebSocket instantly to `evaluator:${userId}` room.
+- **Evaluator assignment**: `assignedTrackId` (track code string) + `assignedEventId` (ObjectId) on User doc. One evaluator → one track per event.
+- **Team-track join**: `Team.assignedTrack` string ('001'-'005') ↔ `Track.code`. No ObjectId join needed.
+- **Evaluator console UX**: R1 TrackCard + fullscreen AssessmentModal (Prev/Next). 2 sections: About Team + Assessment (numeric inputs, criteria-only, no direct total mode).
+- **Lock UI**: When locked, submit buttons disabled + greyed out. Nav buttons (Close/Prev/Next) stay active. LockBanner shown at top. No emojis — Lucide icons only.
+- **Problem Statements page**: Read-only. Teams grouped by `assignedProblemStatement` string. 5 track filter buttons. References R1's AdminProblemStatements pattern.
+- **Progress page**: Event picker → 5 track tabs → Evaluator sidebar (Lock/Unlock per evaluator + Lock All) → Team list panel with toggle (selected evaluator's teams OR all track teams). Export: PDF + XLSX + CSV.
+- **WebSocket rooms**: `evaluator:${userId}` for lock events, `event:${eventId}` for assessment-saved events.
+- **No caching**: Deferred — data volume too small to justify complexity alongside WebSocket invalidation.
+
+### DB State at Time of Planning
+- `tracks` collection: 3 docs (no `code` field yet — needs seed script)
+- `teams` collection: 55 docs with `assignedTrack` ('001'-'005') and `assignedProblemStatement` ('01-01' format)
+- `events` collection: **empty** (admin creates via UI)
+- `users` collection: exists, no `isLocked`/`assignedTrackId`/`assignedEventId` yet
+
+### Schema Changes Planned
+| Model | Fields to Add |
+|---|---|
+| `Track` | `code: String` (unique, sparse) |
+| `User` | `isLocked: Boolean`, `assignedTrackId: String`, `assignedEventId: ObjectId` |
+| `Team` | `teamName`, `assignedTrack`, `assignedProblemStatement`, `trackPreferences` (confirm against live data) |
+| `Event` | `criteria: [{ name, maxMarks, inputType }]` (replaces `assessmentCriteria: [String]`), embed `code` in `selectedTracks` |
+| `Assessment` (subdoc) | Change `criteriaScores: Map` → `criteria: [Mixed]` ordered array |
+
+### Implementation Phases Planned
+1. Track model `code` field + seed script
+2. User + Team schema updates
+3. Event model updates (criteria schema, embedded track code)
+4. Admin backend: full CRUD routes for events, users, evaluator assignment, lock endpoints, teams fetch
+5. Evaluator backend: session endpoint, track-scoped teams, lock-aware assessment save
+6. Admin EventsView UI (full port from R1 with static 5-track display, evaluator management per track)
+7. Admin UsersView CRUD + ProblemStatementsView (new nav item)
+8. Evaluator Console UI (TrackCard + AssessmentModal + LockBanner)
+9. Admin ProgressView UI + WebSocket room setup on server
+
+### Git Protocol
+- All work on branch: `assessment-features`
+- Commit and push after **completing each Phase**, not after every task
+- Commit message format: `feat(Phase N): <short description>` (e.g. `feat(Phase 1): setup track model and seed`)
+- Push to `origin assessment-features` — never to `main`
+
+### Phase 1: Track Model & Seed (assessment-features branch)
+- **Modified**: `backend/src/models/Track.js` - Added `code` field (String, unique, sparse) to act as the universal join key linking teams, events, and evaluators, resolving the ObjectId mismatch.
+- **Created**: `backend/temp/seed-tracks.js` - Script to seed the 5 track definitions from the Round-2 event (SportsTech, NextGenAI, Cyber Security, AgriTech, Sustainability).
+- **Action**: Ran the seed script successfully. The 5 tracks now exist in the R2 `tracks` collection with their respective string codes ('001' to '005').
 
 
 
