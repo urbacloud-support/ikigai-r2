@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
-import { Menu, CalendarDays, TrendingUp, Users } from "lucide-react";
+import { Menu, CalendarDays, TrendingUp, Users, FolderKanban } from "lucide-react";
 import Header from '../../components/shared/Header';
 
 export default function AdminLayout() {
@@ -11,9 +11,11 @@ export default function AdminLayout() {
   let activeTab = "events";
   if (path.includes("/progress")) activeTab = "progress";
   if (path.includes("/users")) activeTab = "users";
+  if (path.includes("/problems")) activeTab = "problems";
 
   const navItems = [
     { id: "events", label: "Events", icon: CalendarDays, path: "/dashboard/events" },
+    { id: "problems", label: "Problem Statements", icon: FolderKanban, path: "/dashboard/problems" },
     { id: "progress", label: "Progress", icon: TrendingUp, path: "/dashboard/progress" },
     { id: "users", label: "Users", icon: Users, path: "/dashboard/users" },
   ];

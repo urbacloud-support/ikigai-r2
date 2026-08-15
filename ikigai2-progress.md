@@ -132,5 +132,11 @@
 - **Created**: `CreateEventForm.jsx`, `ConfirmDeleteModal.jsx`, `EditEventModal.jsx`, `DefineCriteriaModal.jsx`, `EvaluatorList.jsx` in `pages/admin/components/`. These components break down the monolithic R1 logic into manageable, reusable pieces.
 - **Modified**: `pages/admin/EventsView.jsx` - Rebuilt from scratch to implement the new componentized architecture. Allows creating events with static 5-track toggles, defining criteria (event-scoped), and adding/assigning evaluators inline per track.
 
+### Phase 7: Frontend Admin Users & Problem Statements (assessment-features branch)
+- **Created**: `CreateUserModal.jsx` to generate users with auto-passwords.
+- **Modified**: `UsersView.jsx` - Rebuilt to include creation/deletion capabilities using the new components.
+- **Created**: `ProblemStatementsView.jsx` - New page that fetches all teams and groups them visually by `assignedTrack` and `assignedProblemStatement`.
+- **Modified**: `AdminLayout.jsx` & `App.jsx` - Added routing and sidebar navigation for the new Problem Statements page.
+
 
 
