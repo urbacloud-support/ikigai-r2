@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { authFetch } from '../../config/api';
 import Header from '../../components/shared/Header';
-import { Loader2, Calendar } from 'lucide-react';
+import { Loader2, Calendar, Trophy } from 'lucide-react';
 import { io } from 'socket.io-client';
 
 import LockBanner from './components/LockBanner';
 import TrackCard from './components/TrackCard';
 import AssessmentModal from './components/AssessmentModal';
+import AssessmentSummary from './components/AssessmentSummary';
 import { API_BASE } from '../../config/api';
 
 export default function EvaluatorConsole() {
@@ -16,6 +17,7 @@ export default function EvaluatorConsole() {
   
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
 
   const fetchSessionData = async () => {
     try {
@@ -165,6 +167,18 @@ export default function EvaluatorConsole() {
           </div>
         )}
 
+        {/* View Summary Floating Button */}
+        {teams.length > 0 && (
+          <div className="fixed bottom-6 right-6 z-40">
+            <button 
+              onClick={() => setIsSummaryOpen(true)}
+              className="btn btn-primary btn-lg shadow-xl shadow-primary-500/30 rounded-full px-6 py-3 font-semibold border-none"
+            >
+              <Trophy size={18} /> View Summary
+            </button>
+          </div>
+        )}
+
       </main>
 
       <AssessmentModal
@@ -176,6 +190,14 @@ export default function EvaluatorConsole() {
         isLocked={session.user?.isLocked}
         onSubmit={handleAssessmentSubmit}
         onMarkAbsent={handleMarkAbsent}
+      />
+
+      <AssessmentSummary 
+        isOpen={isSummaryOpen}
+        onClose={() => setIsSummaryOpen(false)}
+        teams={teams}
+        criteria={eventCriteria}
+        currentUserId={session.user?._id}
       />
     </div>
   );
