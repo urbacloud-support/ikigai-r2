@@ -4,11 +4,9 @@ const assessmentSchema = new mongoose.Schema({
   evaluatorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   evaluatorName: { type: String },
   role: { type: String, enum: ['evaluator', 'judge'], required: true },
-  criteriaScores: {
-    type: Map,
-    of: Number,
-  },
+  criteria: { type: [mongoose.Schema.Types.Mixed], default: [] },
   totalScore: { type: Number, required: true },
+  mode: { type: String, enum: ['criteria', 'absent'], default: 'criteria' },
   feedback: { type: String }
 }, { timestamps: true });
 
@@ -41,6 +39,10 @@ const memberSchema = new mongoose.Schema({
 const teamSchema = new mongoose.Schema({
   participantId: { type: mongoose.Schema.Types.ObjectId },
   eventId: { type: mongoose.Schema.Types.ObjectId, ref: 'Event' },
+  teamName: { type: String, default: '' },
+  assignedTrack: { type: String, default: '' },
+  assignedProblemStatement: { type: String, default: '' },
+  trackPreferences: { type: [String], default: [] },
   leaderEmail: { type: String, required: true },
   members: [memberSchema],
   project: {

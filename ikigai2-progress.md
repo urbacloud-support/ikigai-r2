@@ -110,8 +110,12 @@
 
 ### Phase 1: Track Model & Seed (assessment-features branch)
 - **Modified**: `backend/src/models/Track.js` - Added `code` field (String, unique, sparse) to act as the universal join key linking teams, events, and evaluators, resolving the ObjectId mismatch.
-- **Created**: `backend/temp/seed-tracks.js` - Script to seed the 5 track definitions from the Round-2 event (SportsTech, NextGenAI, Cyber Security, AgriTech, Sustainability).
+- **Created**: `temp/seed-tracks.js` - Script to seed the 5 track definitions from the Round-2 event (SportsTech, NextGenAI, Cyber Security, AgriTech, Sustainability).
 - **Action**: Ran the seed script successfully. The 5 tracks now exist in the R2 `tracks` collection with their respective string codes ('001' to '005').
+
+### Phase 2: User + Team Schema (assessment-features branch)
+- **Modified**: `backend/src/models/User.js` - Added evaluator-specific fields (`isLocked`, `assignedTrackId`, `assignedEventId`) to control assessment locking and track allocation.
+- **Modified**: `backend/src/models/Team.js` - Added new fields (`teamName`, `assignedTrack`, `assignedProblemStatement`, `trackPreferences`) to natively align with live production DB data. Refactored `assessmentSchema` from a `Map` of criteria scores to an ordered array of `Mixed` type to handle assessment entries properly, and added `mode` enum (`'criteria'`, `'absent'`).
 
 
 
