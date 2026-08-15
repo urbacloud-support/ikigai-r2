@@ -128,5 +128,9 @@
 - **Modified**: `backend/src/controllers/evaluator.controller.js` - Rebuilt to support `getSessionData` (loads user + event criteria), `getAssignedTeams` (fetches teams based on evaluator's assigned track code), `submitAssessment`, and `markAbsent`. All assessment routes now explicitly check for `user.isLocked` before proceeding.
 - **Modified**: `backend/src/routes/evaluator.routes.js` - Wired up new endpoints with the correct `requireAuth('evaluator', 'judge')` middleware.
 
+### Phase 6: Frontend Admin Events (assessment-features branch)
+- **Created**: `CreateEventForm.jsx`, `ConfirmDeleteModal.jsx`, `EditEventModal.jsx`, `DefineCriteriaModal.jsx`, `EvaluatorList.jsx` in `pages/admin/components/`. These components break down the monolithic R1 logic into manageable, reusable pieces.
+- **Modified**: `pages/admin/EventsView.jsx` - Rebuilt from scratch to implement the new componentized architecture. Allows creating events with static 5-track toggles, defining criteria (event-scoped), and adding/assigning evaluators inline per track.
+
 
 
