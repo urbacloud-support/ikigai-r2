@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { authFetch } from '../../config/api';
 import { Loader2, Download, Lock, Unlock } from 'lucide-react';
 import { io } from 'socket.io-client';
-import { API_BASE_URL } from '../../config/api';
+import { API_BASE } from '../../config/api';
 
 import EvaluatorSidebar from './components/EvaluatorSidebar';
 import ProgressStats from './components/ProgressStats';
@@ -94,7 +94,7 @@ export default function ProgressView() {
   useEffect(() => {
     if (!selectedEventId) return;
     
-    const socket = io(API_BASE_URL.replace('/api', ''));
+    const socket = io(API_BASE.replace('/api', ''));
     socket.emit('join-event', selectedEventId);
 
     socket.on('assessment-saved', (data) => {

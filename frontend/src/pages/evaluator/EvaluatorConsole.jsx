@@ -7,7 +7,7 @@ import { io } from 'socket.io-client';
 import LockBanner from './components/LockBanner';
 import TrackCard from './components/TrackCard';
 import AssessmentModal from './components/AssessmentModal';
-import { API_BASE_URL } from '../../config/api';
+import { API_BASE } from '../../config/api';
 
 export default function EvaluatorConsole() {
   const [session, setSession] = useState({ user: null, event: null });
@@ -53,7 +53,7 @@ export default function EvaluatorConsole() {
   useEffect(() => {
     if (!session.user?._id) return;
 
-    const socket = io(API_BASE_URL.replace('/api', '')); // Connect to root
+    const socket = io(API_BASE.replace('/api', '')); // Connect to root
     
     // Join evaluator room
     socket.emit('join-evaluator', session.user._id);
