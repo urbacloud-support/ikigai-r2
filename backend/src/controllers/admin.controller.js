@@ -135,9 +135,20 @@ export const createUser = async (req, res) => {
     const userExists = await User.findOne({ email });
     if (userExists) return res.status(400).json({ message: 'User already exists' });
 
-    // Generate random 8 char password
-    const generatedPassword = Math.random().toString(36).slice(-8);
+    // Extract first name for password (e.g. John -> john123)
+    const nameParts = name.trim().split(/\s+/);
+    let firstName = nameParts[0].toLowerCase();
     
+    // Ignore common titles
+    const titles = ['mr.', 'mrs.', 'ms.', 'dr.', 'prof.', 'mr', 'mrs', 'ms', 'dr', 'prof'];
+    if (titles.includes(firstName) && nameParts.length > 1) {
+      firstName = nameParts[1].toLowerCase();
+    }
+    // Remove non-alphanumeric characters
+    firstName = firstName.replace(/[^a-z0-9]/g, '') || 'evaluator';
+
+    const generatedPassword = `${firstName}123`;
+
     const user = await User.create({
       name,
       email,
