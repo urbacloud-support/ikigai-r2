@@ -1,32 +1,48 @@
 import Team from '../models/Team.js';
 import Event from '../models/Event.js';
+import User from '../models/User.js';
 
-// @desc    Get teams assigned to evaluator's track/event
-// @route   GET /api/evaluator/teams
-// @access  Private/Evaluator
+export const getSessionData = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-password');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    let event = null;
+    if (user.assignedEventId) {
+      event = await Event.findById(user.assignedEventId).select('_id title criteria selectedTracks');
+    }
+    
+    res.json({ user, event });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export const getAssignedTeams = async (req, res) => {
   try {
-    // In a full implementation, you'd filter by the evaluator's assigned event/track.
-    // For now, we fetch teams to allow them to assess.
-    const teams = await Team.find({}).populate('eventId');
+    const user = await User.findById(req.user._id);
+    if (!user || !user.assignedTrackId) {
+      return res.json([]);
+    }
+    
+    const teams = await Team.find({ assignedTrack: user.assignedTrackId });
     res.json(teams);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Submit an assessment for a team
-// @route   PATCH /api/evaluator/teams/:id/assess
-// @access  Private/Evaluator
 export const submitAssessment = async (req, res) => {
-  const { criteriaScores, totalScore, feedback } = req.body;
+  const { criteria, totalScore, mode, feedback } = req.body;
   try {
-    const team = await Team.findById(req.params.id);
-    if (!team) {
-      return res.status(404).json({ message: 'Team not found' });
+    const user = await User.findById(req.user._id);
+    if (user.isLocked) {
+      return res.status(403).json({ locked: true, message: 'Your assessment access is locked.' });
     }
 
-    // Check if evaluator already assessed this team
+    const team = await Team.findById(req.params.id);
+    if (!team) return res.status(404).json({ message: 'Team not found' });
+
     const existingIndex = team.assessments.findIndex(
       a => a.evaluatorId.toString() === req.user._id.toString()
     );
@@ -35,8 +51,9 @@ export const submitAssessment = async (req, res) => {
       evaluatorId: req.user._id,
       evaluatorName: req.user.name,
       role: req.user.role,
-      criteriaScores,
+      criteria: criteria || [],
       totalScore,
+      mode: mode || 'criteria',
       feedback
     };
 
@@ -48,13 +65,54 @@ export const submitAssessment = async (req, res) => {
 
     await team.save();
 
-    // In the future, this is where Socket.io will emit the "assessment-saved" event
     const io = req.app.get('io');
-    if (io) {
-      io.emit('assessment-saved', { teamId: team._id, totalScore });
+    if (io && team.eventId) {
+      io.to(`event:${team.eventId}`).emit('assessment-saved', { teamId: team._id, totalScore, mode: assessmentData.mode });
     }
 
-    res.json({ success: true, message: 'Assessment saved', team });
+    res.json(team);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const markAbsent = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (user.isLocked) {
+      return res.status(403).json({ locked: true, message: 'Your assessment access is locked.' });
+    }
+
+    const team = await Team.findById(req.params.id);
+    if (!team) return res.status(404).json({ message: 'Team not found' });
+
+    const existingIndex = team.assessments.findIndex(
+      a => a.evaluatorId.toString() === req.user._id.toString()
+    );
+
+    const assessmentData = {
+      evaluatorId: req.user._id,
+      evaluatorName: req.user.name,
+      role: req.user.role,
+      criteria: [],
+      totalScore: 0,
+      mode: 'absent'
+    };
+
+    if (existingIndex !== -1) {
+      team.assessments[existingIndex] = assessmentData;
+    } else {
+      team.assessments.push(assessmentData);
+    }
+
+    await team.save();
+
+    const io = req.app.get('io');
+    if (io && team.eventId) {
+      io.to(`event:${team.eventId}`).emit('assessment-saved', { teamId: team._id, totalScore: 0, mode: 'absent' });
+    }
+
+    res.json(team);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

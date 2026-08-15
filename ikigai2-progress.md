@@ -124,5 +124,9 @@
 - **Modified**: `backend/src/controllers/admin.controller.js` - Added full CRUD operations for Events and Users. Added endpoints to define criteria, assign evaluators to tracks, toggle locks, and lock all evaluators via WebSockets.
 - **Modified**: `backend/src/routes/admin.routes.js` - Wired up all new controller endpoints.
 
+### Phase 5: Evaluator Backend Routes (assessment-features branch)
+- **Modified**: `backend/src/controllers/evaluator.controller.js` - Rebuilt to support `getSessionData` (loads user + event criteria), `getAssignedTeams` (fetches teams based on evaluator's assigned track code), `submitAssessment`, and `markAbsent`. All assessment routes now explicitly check for `user.isLocked` before proceeding.
+- **Modified**: `backend/src/routes/evaluator.routes.js` - Wired up new endpoints with the correct `requireAuth('evaluator', 'judge')` middleware.
+
 
 
