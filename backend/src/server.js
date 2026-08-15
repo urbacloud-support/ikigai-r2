@@ -32,6 +32,7 @@ app.set('io', io);
 io.on('connection', (socket) => {
   console.log(`Socket connected: ${socket.id}`);
   socket.on('join-event', (eventId) => socket.join(`event:${eventId}`));
+  socket.on('join-evaluator', (userId) => socket.join(`evaluator:${userId}`));
 });
 
 // Mount Routes

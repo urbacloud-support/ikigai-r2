@@ -142,5 +142,10 @@
 - **Created Components**: `LockBanner.jsx`, `TrackCard.jsx`, `AssessmentModal.jsx`. 
 - **Modified**: `EvaluatorConsole.jsx` - Completely rebuilt. Uses dynamic schema for criteria scoring (instead of hardcoded), supports "Absent" mode natively, handles WebSocket real-time lock updates, and presents teams in a grid of track cards rather than a 2-pane list view. All inputs are completely disabled and greyed out when `user.isLocked` is true.
 
+### Phase 9: Frontend Admin Progress & WebSockets (assessment-features branch)
+- **Modified**: `backend/src/server.js` - Added `join-evaluator` socket room to allow individual lock toggling via WebSockets.
+- **Created Components**: `EvaluatorSidebar.jsx`, `ProgressStats.jsx`, `TeamGrid.jsx` in `pages/admin/components/`.
+- **Modified**: `pages/admin/ProgressView.jsx` - Rebuilt to fetch live teams based on selected track code. Displays an evaluator sidebar allowing admins to individually lock/unlock evaluators, and a global lock/unlock all button. Team Grid shows precise score amounts and 'Absent' badges in real-time by listening to the `assessment-saved` socket event. Export CSV natively supported based on fetched data.
+
 
 
