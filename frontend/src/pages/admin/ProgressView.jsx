@@ -174,19 +174,19 @@ export default function ProgressView() {
           <div className="flex gap-2 w-full md:w-auto">
             <button 
               onClick={() => handleLockAll(true)} disabled={lockingAll}
-              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-700 hover:bg-red-100 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+              className="btn btn-danger flex-1 md:flex-none"
             >
               <Lock size={16} /> Lock All
             </button>
             <button 
               onClick={() => handleLockAll(false)} disabled={lockingAll}
-              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+              className="btn btn-success flex-1 md:flex-none"
             >
               <Unlock size={16} /> Unlock All
             </button>
             <button 
               onClick={exportCSV}
-              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-primary-50 text-primary-700 hover:bg-primary-100 rounded-lg text-sm font-semibold transition-colors"
+              className="btn btn-secondary flex-1 md:flex-none"
             >
               <Download size={16} /> Export
             </button>
@@ -200,11 +200,7 @@ export default function ProgressView() {
           <button
             key={track.code}
             onClick={() => setSelectedTrackId(track.code)}
-            className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
-              selectedTrackId === track.code 
-                ? 'bg-primary-600 text-white shadow-md shadow-primary-500/30' 
-                : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-            }`}
+            className={`btn ${selectedTrackId === track.code ? 'btn-primary' : 'btn-secondary'}`}
           >
             {track.title}
           </button>

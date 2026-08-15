@@ -23,7 +23,7 @@ export default function ConfirmDeleteModal({ isOpen, onClose, onConfirm, itemNam
             <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
               <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
-            <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
+            <button onClick={onClose} className="btn btn-icon">
               <X size={20} />
             </button>
           </div>
@@ -51,21 +51,17 @@ export default function ConfirmDeleteModal({ isOpen, onClose, onConfirm, itemNam
         <div className="p-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-100">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-200 rounded-xl transition-colors"
+            className="btn btn-secondary"
           >
             Cancel
           </button>
           <button
             onClick={handleConfirm}
             disabled={confirmText !== itemName || loading}
-            className={`px-4 py-2 font-medium rounded-xl flex items-center gap-2 transition-all shadow-sm ${
-              confirmText === itemName 
-                ? 'bg-red-600 hover:bg-red-700 text-white shadow-red-500/20' 
-                : 'bg-red-200 text-red-50 cursor-not-allowed'
-            }`}
+            className="btn btn-danger-solid"
           >
             {loading ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : (
               'Delete Forever'
             )}

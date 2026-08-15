@@ -54,9 +54,9 @@ export default function UsersView() {
         <h2 className="text-2xl font-bold text-gray-800">Users Directory</h2>
         <button 
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-xl hover:bg-primary-700 transition-colors shadow-md shadow-primary-500/20"
+          className="btn btn-primary btn-sm"
         >
-          <Plus size={18} />
+          <Plus size={16} />
           <span className="hidden sm:inline">Add User</span>
         </button>
       </div>
@@ -80,7 +80,7 @@ export default function UsersView() {
                   </span>
                   <button 
                     onClick={() => setDeleteModal({ isOpen: true, user })}
-                    className="text-gray-400 hover:text-red-600 p-1 rounded transition-colors"
+                    className="btn btn-icon hover:!bg-red-50 hover:!text-red-600"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -120,7 +120,7 @@ export default function UsersView() {
                   <td className="px-6 py-4 text-right">
                     <button 
                       onClick={() => setDeleteModal({ isOpen: true, user })}
-                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                      className="btn btn-icon hover:!bg-red-50 hover:!text-red-600 opacity-0 group-hover:opacity-100"
                       title="Delete User"
                     >
                       <Trash2 size={18} />

@@ -71,9 +71,9 @@ export default function EventsView() {
         {!showCreateForm && (
           <button 
             onClick={() => setShowCreateForm(true)}
-            className="flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-xl hover:bg-primary-700 transition-colors shadow-md shadow-primary-500/20"
+            className="btn btn-primary btn-sm"
           >
-            <Plus size={18} />
+            <Plus size={16} />
             <span className="hidden sm:inline">Create Event</span>
           </button>
         )}
@@ -111,20 +111,20 @@ export default function EventsView() {
                 <div className="flex items-start gap-2 border-t md:border-t-0 pt-4 md:pt-0">
                   <button 
                     onClick={() => setCriteriaModal({ isOpen: true, event })}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 transition-colors"
+                    className="btn btn-secondary btn-sm"
                   >
                     <Settings size={14} /> Define Criteria
                   </button>
                   <button 
                     onClick={() => setEditModal({ isOpen: true, event })}
-                    className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                    className="btn btn-icon"
                     title="Edit Event"
                   >
                     <Edit size={18} />
                   </button>
                   <button 
                     onClick={() => setDeleteModal({ isOpen: true, event })}
-                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    className="btn btn-icon hover:!bg-red-50 hover:!text-red-600"
                     title="Delete Event"
                   >
                     <Trash2 size={18} />

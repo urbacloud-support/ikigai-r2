@@ -60,7 +60,7 @@ export default function CreateUserModal({ isOpen, onClose, onCreated }) {
           <h3 className="text-xl font-bold text-gray-900">
             {successData ? 'User Created' : 'Create New User'}
           </h3>
-          <button onClick={handleClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
+          <button onClick={handleClose} className="btn btn-icon">
             <X size={20} />
           </button>
         </div>
@@ -86,7 +86,7 @@ export default function CreateUserModal({ isOpen, onClose, onCreated }) {
             </div>
             <button 
               onClick={handleClose}
-              className="w-full px-4 py-2.5 bg-primary-600 text-white font-medium rounded-xl hover:bg-primary-700 transition-colors"
+              className="btn btn-primary w-full"
             >
               Done
             </button>
@@ -128,14 +128,14 @@ export default function CreateUserModal({ isOpen, onClose, onCreated }) {
             </div>
 
             <div className="p-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-100">
-              <button type="button" onClick={handleClose} className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-200 rounded-xl transition-colors">
+              <button type="button" onClick={handleClose} className="btn btn-secondary">
                 Cancel
               </button>
               <button 
                 type="submit" disabled={loading}
-                className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-xl transition-colors shadow-md flex items-center gap-2"
+                className="btn btn-primary"
               >
-                {loading && <Loader2 size={16} className="animate-spin" />}
+                {loading && <Loader2 size={14} className="animate-spin" />}
                 Create User
               </button>
             </div>

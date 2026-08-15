@@ -107,14 +107,14 @@ export default function CreateEventForm({ tracks, onCreated, onCancel }) {
       </div>
 
       <div className="flex justify-end gap-3">
-        <button type="button" onClick={onCancel} className="px-5 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition-colors">
+        <button type="button" onClick={onCancel} className="btn btn-secondary">
           Cancel
         </button>
         <button 
           type="submit" disabled={loading}
-          className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-xl transition-colors shadow-md flex items-center gap-2"
+          className="btn btn-primary"
         >
-          {loading && <Loader2 size={16} className="animate-spin" />}
+          {loading && <Loader2 size={14} className="animate-spin" />}
           Create Event
         </button>
       </div>

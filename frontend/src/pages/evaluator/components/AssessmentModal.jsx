@@ -79,7 +79,7 @@ export default function AssessmentModal({ isOpen, onClose, team, eventCriteria, 
             <h3 className="text-xl font-bold text-gray-900">Evaluate: {team.teamName || 'Unnamed'}</h3>
             <p className="text-sm text-gray-500 mt-1">Problem Statement: {team.assignedProblemStatement || 'N/A'}</p>
           </div>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
+          <button onClick={onClose} className="btn btn-icon">
             <X size={20} />
           </button>
         </div>
@@ -100,7 +100,7 @@ export default function AssessmentModal({ isOpen, onClose, team, eventCriteria, 
             <button 
               type="button"
               onClick={() => setMode('criteria')}
-              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${mode === 'criteria' ? 'bg-primary-600 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}
+              className={`btn flex-1 ${mode === 'criteria' ? 'btn-primary' : 'btn-secondary'}`}
             >
               Criteria Scoring
             </button>
@@ -108,7 +108,7 @@ export default function AssessmentModal({ isOpen, onClose, team, eventCriteria, 
               type="button"
               onClick={handleAbsent}
               disabled={isLocked || loading}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${mode === 'absent' ? 'bg-red-600 text-white shadow-md' : 'bg-white text-red-600 border border-red-200 hover:bg-red-50 disabled:opacity-50'}`}
+              className={`btn ${mode === 'absent' ? 'btn-danger-solid' : 'btn-danger'}`}
             >
               Mark Absent
             </button>
@@ -184,13 +184,13 @@ export default function AssessmentModal({ isOpen, onClose, team, eventCriteria, 
           </div>
           
           <div className="flex gap-3">
-            <button type="button" onClick={onClose} className="px-5 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition-colors">
+            <button type="button" onClick={onClose} className="btn btn-secondary">
               Cancel
             </button>
             <button 
               type="submit" form="eval-form"
               disabled={isLocked || loading || mode === 'absent'}
-              className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-xl transition-colors shadow-md flex items-center gap-2 disabled:opacity-50 disabled:bg-gray-400 disabled:shadow-none"
+              className="btn btn-primary"
             >
               {loading && <Loader2 size={16} className="animate-spin" />}
               Save Assessment

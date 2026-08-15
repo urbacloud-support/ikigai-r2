@@ -22,25 +22,96 @@ body {
   min-height: 100vh;
 }
 
-@layer base {
-  /* Apply GitHub-style interaction to all buttons and button-like links */
-  button, 
-  [type='button'], 
-  [type='submit'] {
-    @apply transition-all duration-150;
+/* ─────────────────────────────────────────────
+   GitHub-style Button System
+   Usage: className="btn btn-primary"
+          className="btn btn-secondary"
+          className="btn btn-danger"   etc.
+───────────────────────────────────────────── */
+@layer components {
+
+  /* Base button — shared geometry and motion */
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5
+           rounded-md border text-sm font-medium leading-5
+           px-3 py-1.5 select-none whitespace-nowrap
+           transition-all duration-100 ease-in-out
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1
+           disabled:opacity-55 disabled:cursor-not-allowed disabled:shadow-none;
   }
-  
-  /* Lighter on hover */
-  button:hover, 
-  [type='button']:hover, 
-  [type='submit']:hover {
-    @apply brightness-110;
+  .btn:active:not(:disabled) {
+    @apply scale-[0.975];
   }
 
-  /* Even lighter on click/active + subtle press effect */
-  button:active, 
-  [type='button']:active, 
-  [type='submit']:active {
-    @apply brightness-125 scale-[0.98];
+  /* Primary — brand colour, solid fill */
+  .btn-primary {
+    @apply bg-primary-600 border-primary-700 text-white shadow-sm
+           hover:bg-primary-700
+           focus-visible:ring-primary-500;
+  }
+
+  /* Secondary — light surface, visible border (GitHub default) */
+  .btn-secondary {
+    @apply bg-white border-gray-300 text-gray-800 shadow-sm
+           hover:bg-gray-50
+           focus-visible:ring-primary-500;
+  }
+
+  /* Ghost — transparent, subtle border on hover */
+  .btn-ghost {
+    @apply bg-transparent border-transparent text-gray-600
+           hover:bg-gray-100 hover:border-gray-200
+           focus-visible:ring-primary-500;
+  }
+
+  /* Danger — destructive actions, outlined style */
+  .btn-danger {
+    @apply bg-white border-red-300 text-red-700 shadow-sm
+           hover:bg-red-50 hover:border-red-400
+           focus-visible:ring-red-400;
+  }
+
+  /* Danger solid — destructive with full fill */
+  .btn-danger-solid {
+    @apply bg-red-600 border-red-700 text-white shadow-sm
+           hover:bg-red-700
+           focus-visible:ring-red-400;
+  }
+
+  /* Success */
+  .btn-success {
+    @apply bg-white border-green-300 text-green-700 shadow-sm
+           hover:bg-green-50 hover:border-green-400
+           focus-visible:ring-green-400;
+  }
+
+  /* Warning */
+  .btn-warning {
+    @apply bg-white border-amber-300 text-amber-700 shadow-sm
+           hover:bg-amber-50 hover:border-amber-400
+           focus-visible:ring-amber-400;
+  }
+
+  /* Icon button — square, for icon-only actions */
+  .btn-icon {
+    @apply p-1.5 rounded-md bg-transparent border-transparent text-gray-500
+           hover:bg-gray-100 hover:text-gray-700 hover:border-gray-200
+           focus-visible:ring-primary-500;
+  }
+
+  /* Sizes */
+  .btn-sm {
+    @apply px-2.5 py-1 text-xs;
+  }
+  .btn-lg {
+    @apply px-5 py-2.5 text-base;
+  }
+}
+
+@layer base {
+  button:active:not(:disabled),
+  [type='button']:active:not(:disabled),
+  [type='submit']:active:not(:disabled) {
+    @apply brightness-95;
   }
 }

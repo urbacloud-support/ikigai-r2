@@ -85,7 +85,7 @@ export default function EvaluatorList({ event, trackCode, onRefresh }) {
         <h4 className="font-medium text-sm text-gray-700">Evaluators ({evaluators.length})</h4>
         <button 
           onClick={() => setIsAdding(!isAdding)}
-          className="text-xs flex items-center gap-1 text-primary-600 hover:text-primary-700 font-medium px-2 py-1 hover:bg-primary-50 rounded-lg transition-colors"
+          className="btn btn-secondary btn-sm"
         >
           {isAdding ? <X size={14} /> : <UserPlus size={14} />}
           {isAdding ? 'Cancel' : 'Add Evaluator'}
@@ -126,7 +126,7 @@ export default function EvaluatorList({ event, trackCode, onRefresh }) {
           <div className="mt-3 flex justify-end">
             <button 
               type="submit" disabled={addLoading}
-              className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
+              className="btn btn-primary btn-sm"
             >
               {addLoading && <Loader2 size={14} className="animate-spin" />} Save
             </button>
@@ -146,7 +146,7 @@ export default function EvaluatorList({ event, trackCode, onRefresh }) {
                   <span className="flex items-center gap-1"><Mail size={12}/> {ev.email}</span>
                 </div>
               </div>
-              <button className="text-gray-400 hover:text-gray-600 p-1">
+              <button className="btn btn-icon">
                 <MoreVertical size={16} />
               </button>
             </li>

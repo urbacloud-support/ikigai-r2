@@ -74,7 +74,7 @@ export default function DefineCriteriaModal({ isOpen, onClose, event, onSaved })
             <h3 className="text-xl font-bold text-gray-900">Assessment Criteria</h3>
             <p className="text-sm text-gray-500 mt-1">Define scoring criteria for {event?.title}</p>
           </div>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
+          <button onClick={onClose} className="btn btn-icon">
             <X size={20} />
           </button>
         </div>
@@ -128,7 +128,7 @@ export default function DefineCriteriaModal({ isOpen, onClose, event, onSaved })
                   <button
                     onClick={() => handleRemoveRow(index)}
                     disabled={criteria.length === 1}
-                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-gray-400"
+                    className="btn btn-icon hover:!bg-red-50 hover:!text-red-500"
                   >
                     <Trash2 size={18} />
                   </button>
@@ -139,22 +139,22 @@ export default function DefineCriteriaModal({ isOpen, onClose, event, onSaved })
 
           <button
             onClick={handleAddRow}
-            className="mt-4 flex items-center gap-2 text-primary-600 font-medium hover:bg-primary-50 px-4 py-2 rounded-xl transition-colors w-full justify-center border border-dashed border-primary-200"
+            className="mt-4 btn btn-secondary w-full justify-center border-dashed"
           >
             <Plus size={16} /> Add Criterion
           </button>
         </div>
 
         <div className="p-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-100">
-          <button onClick={onClose} className="px-5 py-2.5 text-gray-600 font-medium hover:bg-gray-200 rounded-xl transition-colors">
+          <button onClick={onClose} className="btn btn-secondary">
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={loading}
-            className="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-xl transition-colors shadow-md shadow-primary-500/20 flex items-center gap-2"
+            className="btn btn-primary"
           >
-            {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'Save Criteria'}
+            {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'Save Criteria'}
           </button>
         </div>
       </div>

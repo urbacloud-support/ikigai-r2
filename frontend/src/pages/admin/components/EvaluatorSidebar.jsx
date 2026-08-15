@@ -45,7 +45,7 @@ export default function EvaluatorSidebar({ evaluators, selectedEvaluatorId, onSe
           <div className="flex items-center gap-2 pl-2 border-l border-gray-200">
             <button
               onClick={(e) => toggleLock(evaluator, e)}
-              className={`p-1.5 rounded-lg transition-colors ${evaluator.isLocked ? 'text-red-600 bg-red-50 hover:bg-red-100' : 'text-green-600 bg-green-50 hover:bg-green-100'}`}
+              className={`btn btn-icon btn-sm ${evaluator.isLocked ? 'hover:!bg-red-50 hover:!text-red-600 text-red-500' : 'hover:!bg-green-50 hover:!text-green-600 text-green-600'}`}
               title={evaluator.isLocked ? "Unlock Access" : "Lock Access"}
             >
               {evaluator.isLocked ? <Lock size={16} /> : <Unlock size={16} />}
