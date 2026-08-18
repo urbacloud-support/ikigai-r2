@@ -22,7 +22,7 @@ export default function EvaluatorList({ event, trackCode, onRefresh }) {
       if (res.ok) {
         const data = await res.json();
         // Filter client-side by track code
-        const trackEvaluators = data.filter(e => e.assignedTrackId === trackCode);
+        const trackEvaluators = data.filter(e => e.assignedTrackIds && e.assignedTrackIds.includes(trackCode));
         setEvaluators(trackEvaluators);
         
         // Fetch all users to find existing evaluators

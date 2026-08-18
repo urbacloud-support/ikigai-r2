@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Users as TeamIcon, CheckCircle, Clock, UserX } from 'lucide-react';
+import { getProblemStatementName } from '../../../utils/mappingUtils';
+import TeamDetailsModal from './TeamDetailsModal';
 
 export default function TeamGrid({ teams, currentEvaluatorId }) {
+  const [selectedTeam, setSelectedTeam] = useState(null);
   if (!teams || teams.length === 0) {
     return (
       <div className="text-center p-8 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
@@ -19,10 +22,14 @@ export default function TeamGrid({ teams, currentEvaluatorId }) {
         const isAbsent = assessment?.mode === 'absent';
 
         return (
-          <div key={team._id} className="p-5 rounded-xl border border-gray-100 bg-white shadow-sm flex flex-col justify-between h-full">
+          <div 
+            key={team._id} 
+            onClick={() => setSelectedTeam(team)}
+            className="p-5 rounded-xl border border-gray-100 bg-white shadow-sm flex flex-col justify-between h-full cursor-pointer hover:border-primary-300 hover:shadow-md transition-all group"
+          >
             <div>
               <div className="flex justify-between items-start mb-2">
-                <h4 className="font-bold text-gray-900 text-lg line-clamp-1 flex-1 pr-2">
+                <h4 className="font-bold text-gray-900 text-lg line-clamp-1 flex-1 pr-2 group-hover:text-primary-700 transition-colors">
                   {team.teamName || 'Unnamed Team'}
                 </h4>
                 
@@ -42,7 +49,7 @@ export default function TeamGrid({ teams, currentEvaluatorId }) {
                   </span>
                 )}
               </div>
-              <p className="text-sm text-gray-500 font-medium mb-1">PS: {team.assignedProblemStatement || 'N/A'}</p>
+              <p className="text-sm text-gray-500 font-medium mb-1">PS: {getProblemStatementName(team.assignedProblemStatement, true)}</p>
               <p className="text-xs text-gray-500">Leader: {team.leaderEmail}</p>
             </div>
             
@@ -53,6 +60,12 @@ export default function TeamGrid({ teams, currentEvaluatorId }) {
           </div>
         );
       })}
+      
+      <TeamDetailsModal 
+        isOpen={!!selectedTeam} 
+        onClose={() => setSelectedTeam(null)} 
+        team={selectedTeam} 
+      />
     </div>
   );
 }

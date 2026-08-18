@@ -13,7 +13,7 @@ const userSchema = new mongoose.Schema({
   resetPasswordToken: String,
   resetPasswordExpires: Date,
   isLocked: { type: Boolean, default: false },
-  assignedTrackId: { type: String, default: null },
+  assignedTrackIds: { type: [String], default: [] },
   assignedEventId: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', default: null }
 }, { timestamps: true });
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, CheckCircle, UserX, Loader2 } from 'lucide-react';
+import { getProblemStatementName } from '../../../utils/mappingUtils';
 
 export default function AssessmentModal({ isOpen, onClose, team, eventCriteria, currentUserId, isLocked, onSubmit, onMarkAbsent }) {
   const [criteria, setCriteria] = useState([]);
@@ -77,7 +78,7 @@ export default function AssessmentModal({ isOpen, onClose, team, eventCriteria, 
         <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10">
           <div>
             <h3 className="text-xl font-bold text-gray-900">Evaluate: {team.teamName || 'Unnamed'}</h3>
-            <p className="text-sm text-gray-500 mt-1">Problem Statement: {team.assignedProblemStatement || 'N/A'}</p>
+            <p className="text-sm text-gray-500 mt-1">Problem Statement: {getProblemStatementName(team.assignedProblemStatement, true)}</p>
           </div>
           <button onClick={onClose} className="btn btn-icon">
             <X size={20} />

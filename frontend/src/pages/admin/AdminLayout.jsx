@@ -28,25 +28,25 @@ export default function AdminLayout() {
         
         {/* Desktop Sidebar - Collapsible */}
         <aside 
-          className={`bg-white border-r border-gray-200 shadow-sm flex flex-col shrink-0 transition-all duration-300 ease-in-out relative ${isCollapsed ? 'w-20' : 'w-64'} hidden md:flex`}
+          className={`bg-white border-r border-gray-100 flex flex-col shrink-0 transition-all duration-300 ease-in-out relative ${isCollapsed ? 'w-24' : 'w-64'} hidden md:flex`}
         >
           {/* Sidebar Header */}
-          <div className={`flex items-center pt-8 pb-6 ${isCollapsed ? 'flex-col gap-6' : 'px-6 gap-4'}`}>
+          <div className={`flex items-center pt-8 pb-6 transition-all duration-300 px-5`}>
             <button 
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="flex-shrink-0 bg-white border border-primary-200 rounded-lg p-2.5 shadow-sm text-primary-700 hover:bg-primary-50 transition-colors"
+              className={`flex-shrink-0 bg-white border border-primary-200 rounded-[20px] flex items-center justify-center text-primary-800 hover:bg-primary-50 transition-all duration-300 w-14 h-14`}
               title="Toggle Sidebar"
             >
-              <Menu size={20} />
+              <Menu size={22} strokeWidth={2} />
             </button>
             
-            <div className={`transition-all duration-300 overflow-hidden ${isCollapsed ? 'opacity-0 w-0 h-0' : 'opacity-100 w-auto h-auto'}`}>
-              <h1 className="text-2xl font-black text-primary-800 tracking-tight">Admin</h1>
+            <div className={`transition-all duration-300 ease-in-out overflow-hidden flex items-center whitespace-nowrap ${isCollapsed ? 'opacity-0 max-w-0 ml-0' : 'opacity-100 max-w-[200px] ml-4'}`}>
+              <h1 className="text-2xl font-medium text-primary-900 tracking-tight">Admin</h1>
             </div>
           </div>
 
           {/* Navigation Links */}
-          <nav className="flex-1 px-4 space-y-2 mt-2">
+          <nav className="flex-1 space-y-2 mt-4 px-5">
             {navItems.map((item) => {
               const isActive = activeTab === item.id;
               const Icon = item.icon;
@@ -56,16 +56,18 @@ export default function AdminLayout() {
                   key={item.id}
                   to={item.path}
                   title={isCollapsed ? item.label : ""}
-                  className={`flex items-center gap-4 py-3.5 px-4 rounded-xl font-semibold transition-all duration-200 ${
+                  className={`flex items-center rounded-[20px] font-medium transition-all duration-300 overflow-hidden ${
                     isActive 
-                      ? "bg-primary-100/60 text-primary-800 shadow-sm" 
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  } ${isCollapsed ? 'justify-center' : ''}`}
+                      ? "bg-primary-50 text-primary-800" 
+                      : "text-slate-500 hover:bg-gray-50 hover:text-slate-700"
+                  } ${isCollapsed ? 'w-14' : 'w-full'}`}
                 >
-                  <Icon size={20} className={`flex-shrink-0 ${isActive ? "text-primary-700" : "text-gray-400"}`} />
+                  <div className="w-14 h-14 flex items-center justify-center shrink-0">
+                    <Icon size={24} strokeWidth={2} className={`transition-all duration-300 ${isActive ? "text-primary-800" : "text-slate-400"}`} />
+                  </div>
                   
-                  <span className={`whitespace-nowrap transition-all duration-300 overflow-hidden ${
-                    isCollapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'
+                  <span className={`whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden ${
+                    isCollapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-[200px] pr-4'
                   }`}>
                     {item.label}
                   </span>

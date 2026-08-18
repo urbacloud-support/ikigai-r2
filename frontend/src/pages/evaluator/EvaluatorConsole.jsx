@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { authFetch } from '../../config/api';
 import Header from '../../components/shared/Header';
-import { Loader2, Calendar, Trophy } from 'lucide-react';
+import { Loader2, Calendar, Trophy, ArrowLeft } from 'lucide-react';
 import { io } from 'socket.io-client';
 
 import LockBanner from './components/LockBanner';
@@ -18,6 +18,7 @@ export default function EvaluatorConsole() {
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+  const [selectedTrackId, setSelectedTrackId] = useState(null);
 
   const fetchSessionData = async () => {
     try {
@@ -110,13 +111,13 @@ export default function EvaluatorConsole() {
     return <div className="h-screen flex justify-center items-center"><Loader2 className="animate-spin text-primary-500 w-8 h-8" /></div>;
   }
 
-  if (!session.user?.assignedTrackId) {
+  if (!session.user?.assignedTrackIds || session.user.assignedTrackIds.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header />
         <main className="flex-1 w-full max-w-7xl mx-auto p-6 flex items-center justify-center">
           <div className="text-center p-8 bg-white rounded-2xl shadow-sm border border-gray-100 max-w-md w-full">
-            <h2 className="text-xl font-bold text-gray-800 mb-2">No Track Assigned</h2>
+            <h2 className="text-xl font-bold text-gray-800 mb-2">No Tracks Assigned</h2>
             <p className="text-gray-500">You have not been assigned to evaluate any specific track yet. Please wait or contact an administrator.</p>
           </div>
         </main>
@@ -124,8 +125,55 @@ export default function EvaluatorConsole() {
     );
   }
 
-  const trackObj = session.event?.selectedTracks?.find(t => t.code === session.user.assignedTrackId);
   const eventCriteria = session.event?.criteria || [];
+
+  if (!selectedTrackId) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col pb-10">
+        <Header />
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <LockBanner isLocked={session.user?.isLocked} />
+          
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mb-8">
+            <h1 className="text-2xl font-bold text-gray-900">{session.event?.title || 'Event Dashboard'}</h1>
+            <p className="text-gray-500 mt-2">Select an assigned track below to view and evaluate teams.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {session.user.assignedTrackIds.map(trackId => {
+              const trackObj = session.event?.selectedTracks?.find(t => t.code === trackId);
+              const trackTeamsCount = teams.filter(t => t.assignedTrack === trackId).length;
+              
+              return (
+                <div key={trackId} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col h-full hover:border-primary-300 hover:shadow-md transition-all cursor-default">
+                  <div className="flex-1 mb-6">
+                    <span className="inline-block px-3 py-1 bg-primary-50 text-primary-700 text-xs font-bold uppercase tracking-wider rounded-lg mb-3">
+                      Track {trackId}
+                    </span>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">{trackObj?.title || 'Unknown Track'}</h3>
+                    <p className="text-gray-500 text-sm line-clamp-2">{trackObj?.description || 'No description available.'}</p>
+                  </div>
+                  
+                  <div className="pt-4 border-t border-gray-50 flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-500 flex items-center gap-1.5"><Calendar size={14}/> {trackTeamsCount} Teams</span>
+                    <button 
+                      onClick={() => setSelectedTrackId(trackId)}
+                      className="btn btn-primary"
+                    >
+                      Open Track
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  const trackObj = session.event?.selectedTracks?.find(t => t.code === selectedTrackId);
+  const trackTeams = teams.filter(t => t.assignedTrack === selectedTrackId);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col pb-10">
@@ -135,28 +183,37 @@ export default function EvaluatorConsole() {
         
         <LockBanner isLocked={session.user?.isLocked} />
 
+        <div className="mb-4">
+          <button 
+            onClick={() => setSelectedTrackId(null)}
+            className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
+          >
+            <ArrowLeft size={16} /> Back to Tracks
+          </button>
+        </div>
+
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{session.event?.title || 'Event'}</h1>
             <div className="flex items-center gap-4 mt-2">
               <span className="flex items-center gap-1.5 text-sm font-medium text-primary-700 bg-primary-50 px-3 py-1 rounded-full border border-primary-100">
-                Track: {trackObj?.title || session.user.assignedTrackId}
+                Track: {trackObj?.title || selectedTrackId}
               </span>
               <span className="text-sm text-gray-500 flex items-center gap-1.5">
-                <Calendar size={14} /> My Teams ({teams.length})
+                <Calendar size={14} /> My Teams ({trackTeams.length})
               </span>
             </div>
           </div>
         </div>
 
-        {teams.length === 0 ? (
+        {trackTeams.length === 0 ? (
           <div className="text-center p-12 bg-white rounded-2xl shadow-sm border border-gray-100">
             <h3 className="text-lg font-medium text-gray-800">No Teams Available</h3>
-            <p className="text-gray-500 mt-1">There are no teams assigned to your track yet.</p>
+            <p className="text-gray-500 mt-1">There are no teams assigned to this track yet.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {teams.map(team => (
+            {trackTeams.map(team => (
               <TrackCard 
                 key={team._id} 
                 team={team} 
@@ -168,7 +225,7 @@ export default function EvaluatorConsole() {
         )}
 
         {/* View Summary Floating Button */}
-        {teams.length > 0 && (
+        {trackTeams.length > 0 && (
           <div className="fixed bottom-6 right-6 z-40">
             <button 
               onClick={() => setIsSummaryOpen(true)}
@@ -195,7 +252,7 @@ export default function EvaluatorConsole() {
       <AssessmentSummary 
         isOpen={isSummaryOpen}
         onClose={() => setIsSummaryOpen(false)}
-        teams={teams}
+        teams={trackTeams}
         criteria={eventCriteria}
         currentUserId={session.user?._id}
       />

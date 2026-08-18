@@ -62,7 +62,7 @@ export const deleteEvent = async (req, res) => {
     if (!event) return res.status(404).json({ message: 'Event not found' });
     
     // Unset assignedEventId for any evaluators
-    await User.updateMany({ assignedEventId: event._id }, { $set: { assignedEventId: null, assignedTrackId: null } });
+    await User.updateMany({ assignedEventId: event._id }, { $set: { assignedEventId: null, assignedTrackIds: [] } });
     
     res.json({ message: 'Event removed' });
   } catch (error) {
@@ -201,7 +201,9 @@ export const assignEvaluator = async (req, res) => {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
     
-    user.assignedTrackId = trackCode;
+    if (!user.assignedTrackIds.includes(trackCode)) {
+      user.assignedTrackIds.push(trackCode);
+    }
     user.assignedEventId = eventId;
     await user.save();
     

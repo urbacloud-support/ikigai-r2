@@ -7,6 +7,7 @@ import ConfirmDeleteModal from './components/ConfirmDeleteModal';
 import EditEventModal from './components/EditEventModal';
 import DefineCriteriaModal from './components/DefineCriteriaModal';
 import EvaluatorList from './components/EvaluatorList';
+import TrackItem from './components/TrackItem';
 
 export default function EventsView() {
   const [events, setEvents] = useState([]);
@@ -94,16 +95,18 @@ export default function EventsView() {
           </div>
         ) : (
           events.map(event => (
-            <div key={event._id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="p-5 flex flex-col md:flex-row justify-between gap-4">
+            <div key={event._id} className="bg-white rounded-2xl border border-primary-200 shadow-sm hover:shadow-md transition overflow-hidden">
+              <div className="p-6 flex flex-col md:flex-row justify-between gap-4">
                 <div className="flex-1 cursor-pointer" onClick={() => toggleExpand(event._id)}>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-lg text-gray-900">{event.title}</h3>
-                    {expandedEvents[event._id] ? <ChevronUp size={18} className="text-gray-400"/> : <ChevronDown size={18} className="text-gray-400"/>}
+                    <h3 className="font-extrabold text-2xl text-primary-700 truncate">{event.title}</h3>
+                    <ChevronDown size={20} className={`transition-transform duration-300 ${expandedEvents[event._id] ? '-rotate-180 text-primary-600' : 'text-primary-600'}`}/>
                   </div>
                   <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
                     <span className="flex items-center gap-1"><Calendar size={14} className="text-primary-500" /> {new Date(event.date).toLocaleDateString()}</span>
-                    <span className="flex items-center gap-1"><MapPin size={14} className="text-primary-500" /> {event.location || 'Online'}</span>
+                    {event.location && (
+                      <span className="flex items-center gap-1"><MapPin size={14} className="text-primary-500" /> {event.location}</span>
+                    )}
                   </div>
                   <p className="text-gray-500 text-sm mt-2 line-clamp-2">{event.description}</p>
                 </div>
@@ -111,20 +114,20 @@ export default function EventsView() {
                 <div className="flex items-start gap-2 border-t md:border-t-0 pt-4 md:pt-0">
                   <button 
                     onClick={() => setCriteriaModal({ isOpen: true, event })}
-                    className="btn btn-secondary btn-sm"
+                    className="btn btn-secondary btn-sm text-primary-700 bg-primary-50 border-primary-200 hover:bg-primary-100"
                   >
                     <Settings size={14} /> Define Criteria
                   </button>
                   <button 
                     onClick={() => setEditModal({ isOpen: true, event })}
-                    className="btn btn-icon"
+                    className="btn btn-icon text-amber-600 hover:!bg-amber-50 hover:!text-amber-700 hover:!border-amber-200"
                     title="Edit Event"
                   >
                     <Edit size={18} />
                   </button>
                   <button 
                     onClick={() => setDeleteModal({ isOpen: true, event })}
-                    className="btn btn-icon hover:!bg-red-50 hover:!text-red-600"
+                    className="btn btn-icon text-red-600 hover:!bg-red-50 hover:!text-red-700 hover:!border-red-200"
                     title="Delete Event"
                   >
                     <Trash2 size={18} />
@@ -133,23 +136,13 @@ export default function EventsView() {
               </div>
 
               {expandedEvents[event._id] && (
-                <div className="p-5 bg-gray-50/50 border-t border-gray-100">
-                  <h4 className="font-semibold text-gray-800 mb-4">Event Tracks ({event.selectedTracks?.length || 0})</h4>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="p-6 pt-0 bg-white">
+                  <div className="border-t border-gray-200 pt-4 mb-4">
+                    <h4 className="font-semibold text-gray-800">Event Tracks ({event.selectedTracks?.length || 0})</h4>
+                  </div>
+                  <div className="flex flex-col gap-4">
                     {event.selectedTracks?.map(track => (
-                      <div key={track.trackId} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h5 className="font-medium text-gray-900">{track.title}</h5>
-                            <span className="inline-block mt-1 px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded border border-gray-200">
-                              Code: {track.code}
-                            </span>
-                          </div>
-                        </div>
-                        <p className="text-sm text-gray-500 mt-2 line-clamp-2">{track.description}</p>
-                        
-                        <EvaluatorList event={event} trackCode={track.code} onRefresh={fetchData} />
-                      </div>
+                      <TrackItem key={track.trackId} event={event} track={track} onRefresh={fetchData} />
                     ))}
                   </div>
                 </div>

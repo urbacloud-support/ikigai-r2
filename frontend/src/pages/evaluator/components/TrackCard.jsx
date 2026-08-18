@@ -1,5 +1,6 @@
 import React from 'react';
 import { Users, CheckCircle, Clock } from 'lucide-react';
+import { getProblemStatementName } from '../../../utils/mappingUtils';
 
 export default function TrackCard({ team, currentUserId, onClick }) {
   const assessment = team.assessments?.find(a => a.evaluatorId === currentUserId);
@@ -15,7 +16,7 @@ export default function TrackCard({ team, currentUserId, onClick }) {
           <h3 className="font-bold text-gray-900 group-hover:text-primary-700 transition-colors">
             {team.teamName || 'Unnamed Team'}
           </h3>
-          <div className="text-sm text-gray-500 mt-1">PS: {team.assignedProblemStatement || 'N/A'}</div>
+          <div className="text-sm text-gray-500 mt-1">PS: {getProblemStatementName(team.assignedProblemStatement, true)}</div>
         </div>
         
         {isAssessed ? (

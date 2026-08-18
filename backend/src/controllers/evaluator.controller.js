@@ -21,11 +21,11 @@ export const getSessionData = async (req, res) => {
 export const getAssignedTeams = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    if (!user || !user.assignedTrackId) {
+    if (!user || !user.assignedTrackIds || user.assignedTrackIds.length === 0) {
       return res.json([]);
     }
     
-    const teams = await Team.find({ assignedTrack: user.assignedTrackId });
+    const teams = await Team.find({ assignedTrack: { $in: user.assignedTrackIds } });
     res.json(teams);
   } catch (error) {
     res.status(500).json({ message: error.message });

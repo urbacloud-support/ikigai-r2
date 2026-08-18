@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { authFetch } from '../../config/api';
-import { Loader2, Download, Lock, Unlock } from 'lucide-react';
+import { Loader2, Download, Lock, Unlock, Calendar, ChevronDown as ChevronDownIcon } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { API_BASE } from '../../config/api';
 
@@ -71,7 +71,7 @@ export default function ProgressView() {
       if (evRes.ok) {
         const allEvals = await evRes.json();
         // Filter by trackCode client side
-        const trackEvals = allEvals.filter(e => e.assignedTrackId === selectedTrackId);
+        const trackEvals = allEvals.filter(e => e.assignedTrackIds && e.assignedTrackIds.includes(selectedTrackId));
         setEvaluators(trackEvals);
         if (trackEvals.length > 0 && !trackEvals.find(e => e._id === selectedEvaluatorId)) {
           setSelectedEvaluatorId(trackEvals[0]._id);
@@ -91,6 +91,11 @@ export default function ProgressView() {
   };
 
   // 4. WebSocket setup for real-time progress
+  const latestFetchData = useRef(fetchData);
+  useEffect(() => {
+    latestFetchData.current = fetchData;
+  }, [fetchData]);
+
   useEffect(() => {
     if (!selectedEventId) return;
     
@@ -98,13 +103,14 @@ export default function ProgressView() {
     socket.emit('join-event', selectedEventId);
 
     socket.on('assessment-saved', (data) => {
-      // Re-fetch teams to get the latest assessment data
-      // Optimization: we could update the local state manually, but a fetch is safer for consistency
-      fetchData();
+      // Use the ref to ensure we call the latest fetchData without recreating the socket
+      if (latestFetchData.current) {
+        latestFetchData.current();
+      }
     });
 
     return () => socket.disconnect();
-  }, [selectedEventId, selectedTrackId]); // Reconnect if event changes
+  }, [selectedEventId]); // Only reconnect if the event itself changes
 
   const handleLockAll = async (lockState) => {
     if (!window.confirm(`Are you sure you want to ${lockState ? 'lock' : 'unlock'} ALL evaluators for this event?`)) return;
@@ -156,51 +162,59 @@ export default function ProgressView() {
   return (
     <div className="space-y-4 pb-20">
       
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-        <div className="w-full md:w-auto">
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Select Event</label>
-          <select 
-            className="w-full md:w-64 bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 p-2.5 outline-none font-medium"
-            value={selectedEventId}
-            onChange={(e) => setSelectedEventId(e.target.value)}
-          >
-            {events.map(ev => (
-              <option key={ev._id} value={ev._id}>{ev.title}</option>
-            ))}
-          </select>
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 bg-white rounded-2xl shadow-sm border border-gray-100 p-5 md:p-6">
+        <div className="w-full lg:w-auto flex-1 max-w-md">
+          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">Current Event</label>
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <Calendar className="h-5 w-5 text-primary-500 group-hover:text-primary-600 transition-colors" />
+            </div>
+            <select 
+              className="block w-full pl-12 pr-10 py-3.5 bg-gray-50 border-2 border-transparent hover:border-gray-200 text-gray-900 text-base font-bold rounded-xl focus:bg-white focus:ring-0 focus:border-primary-500 outline-none appearance-none cursor-pointer transition-all shadow-sm"
+              value={selectedEventId}
+              onChange={(e) => setSelectedEventId(e.target.value)}
+            >
+              {events.map(ev => (
+                <option key={ev._id} value={ev._id}>{ev.title}</option>
+              ))}
+            </select>
+            <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-400 group-hover:text-gray-600 transition-colors">
+              <ChevronDownIcon size={20} />
+            </div>
+          </div>
         </div>
 
         {selectedEventId && (
-          <div className="flex gap-2 w-full md:w-auto">
+          <div className="flex flex-wrap gap-3 w-full lg:w-auto">
             <button 
               onClick={() => handleLockAll(true)} disabled={lockingAll}
-              className="btn btn-danger flex-1 md:flex-none"
+              className="btn btn-danger flex-1 sm:flex-none py-2.5 px-5 font-semibold shadow-sm"
             >
-              <Lock size={16} /> Lock All
+              <Lock size={18} /> Lock All
             </button>
             <button 
               onClick={() => handleLockAll(false)} disabled={lockingAll}
-              className="btn btn-success flex-1 md:flex-none"
+              className="btn btn-success flex-1 sm:flex-none py-2.5 px-5 font-semibold shadow-sm"
             >
-              <Unlock size={16} /> Unlock All
+              <Unlock size={18} /> Unlock All
             </button>
             <button 
               onClick={exportCSV}
-              className="btn btn-secondary flex-1 md:flex-none"
+              className="btn bg-gray-100 text-gray-700 hover:bg-gray-200 border-none flex-1 sm:flex-none py-2.5 px-5 font-semibold shadow-sm"
             >
-              <Download size={16} /> Export
+              <Download size={18} /> Export
             </button>
           </div>
         )}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-2 overflow-x-auto whitespace-nowrap flex gap-2">
-        {tracks.length === 0 && <span className="p-2 text-sm text-gray-500">No tracks available for this event.</span>}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-5 overflow-x-auto flex gap-4 justify-between items-center min-h-[90px]">
+        {tracks.length === 0 && <span className="p-2 text-sm text-gray-500 w-full text-center">No tracks available for this event.</span>}
         {tracks.map(track => (
           <button
             key={track.code}
             onClick={() => setSelectedTrackId(track.code)}
-            className={`btn ${selectedTrackId === track.code ? 'btn-primary' : 'btn-secondary'}`}
+            className={`btn flex-1 min-w-[150px] justify-center py-3 text-sm md:text-base font-bold transition-all ${selectedTrackId === track.code ? 'btn-primary shadow-md transform scale-[1.02]' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'}`}
           >
             {track.title}
           </button>
