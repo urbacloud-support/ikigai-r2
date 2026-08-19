@@ -15,10 +15,12 @@ export default function EvaluatorConsole() {
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  const [selectedTeam, setSelectedTeam] = useState(null);
+  const [selectedTeamIndex, setSelectedTeamIndex] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [selectedTrackId, setSelectedTrackId] = useState(null);
+
+  const trackTeams = teams.filter(t => t.assignedTrack === selectedTrackId);
 
   const fetchSessionData = async () => {
     try {
@@ -73,15 +75,33 @@ export default function EvaluatorConsole() {
     };
   }, [session.user?._id]);
 
+  const handleNextTeam = () => {
+    if (selectedTeamIndex < trackTeams.length - 1) {
+      setSelectedTeamIndex(prev => prev + 1);
+    }
+  };
+
+  const handlePrevTeam = () => {
+    if (selectedTeamIndex > 0) {
+      setSelectedTeamIndex(prev => prev - 1);
+    }
+  };
+
   const handleAssessmentSubmit = async (data) => {
+    const currentTeam = trackTeams[selectedTeamIndex];
+    if (!currentTeam) return;
     try {
-      const res = await authFetch(`/evaluator/teams/${selectedTeam._id}/assess`, {
+      const res = await authFetch(`/evaluator/teams/${currentTeam._id}/assess`, {
         method: 'PATCH',
         body: JSON.stringify(data)
       });
       if (res.ok) {
         await fetchTeams();
-        setIsModalOpen(false);
+        if (selectedTeamIndex < trackTeams.length - 1) {
+          setSelectedTeamIndex(prev => prev + 1);
+        } else {
+          setIsModalOpen(false);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -89,13 +109,19 @@ export default function EvaluatorConsole() {
   };
 
   const handleMarkAbsent = async () => {
+    const currentTeam = trackTeams[selectedTeamIndex];
+    if (!currentTeam) return;
     try {
-      const res = await authFetch(`/evaluator/teams/${selectedTeam._id}/absent`, {
+      const res = await authFetch(`/evaluator/teams/${currentTeam._id}/absent`, {
         method: 'PATCH'
       });
       if (res.ok) {
         await fetchTeams();
-        setIsModalOpen(false);
+        if (selectedTeamIndex < trackTeams.length - 1) {
+          setSelectedTeamIndex(prev => prev + 1);
+        } else {
+          setIsModalOpen(false);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -103,7 +129,8 @@ export default function EvaluatorConsole() {
   };
 
   const openAssessment = (team) => {
-    setSelectedTeam(team);
+    const idx = trackTeams.findIndex(t => t._id === team._id);
+    setSelectedTeamIndex(idx);
     setIsModalOpen(true);
   };
 
@@ -173,7 +200,6 @@ export default function EvaluatorConsole() {
   }
 
   const trackObj = session.event?.selectedTracks?.find(t => t.code === selectedTrackId);
-  const trackTeams = teams.filter(t => t.assignedTrack === selectedTrackId);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col pb-10">
@@ -186,7 +212,7 @@ export default function EvaluatorConsole() {
         <div className="mb-4">
           <button 
             onClick={() => setSelectedTrackId(null)}
-            className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
+            className="btn btn-secondary w-fit flex items-center gap-2"
           >
             <ArrowLeft size={16} /> Back to Tracks
           </button>
@@ -241,7 +267,11 @@ export default function EvaluatorConsole() {
       <AssessmentModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        team={selectedTeam}
+        team={trackTeams[selectedTeamIndex]}
+        currentIndex={selectedTeamIndex}
+        totalTeams={trackTeams.length}
+        onNext={handleNextTeam}
+        onPrev={handlePrevTeam}
         eventCriteria={eventCriteria}
         currentUserId={session.user?._id}
         isLocked={session.user?.isLocked}

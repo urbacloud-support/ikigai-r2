@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, CheckCircle, UserX, Loader2 } from 'lucide-react';
 import { getProblemStatementName } from '../../../utils/mappingUtils';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-export default function AssessmentModal({ isOpen, onClose, team, eventCriteria, currentUserId, isLocked, onSubmit, onMarkAbsent }) {
+export default function AssessmentModal({ isOpen, onClose, team, currentIndex, totalTeams, onNext, onPrev, eventCriteria, currentUserId, isLocked, onSubmit, onMarkAbsent }) {
   const [criteria, setCriteria] = useState([]);
   const [feedback, setFeedback] = useState('');
   const [mode, setMode] = useState('criteria'); // 'criteria' or 'absent'
@@ -80,9 +81,32 @@ export default function AssessmentModal({ isOpen, onClose, team, eventCriteria, 
             <h3 className="text-xl font-bold text-gray-900">Evaluate: {team.teamName || 'Unnamed'}</h3>
             <p className="text-sm text-gray-500 mt-1">Problem Statement: {getProblemStatementName(team.assignedProblemStatement, true)}</p>
           </div>
-          <button onClick={onClose} className="btn btn-icon">
-            <X size={20} />
-          </button>
+          <div className="flex items-center gap-3">
+            {currentIndex !== undefined && totalTeams !== undefined && (
+              <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-lg border border-gray-200 mr-2">
+                <button 
+                  onClick={onPrev} 
+                  disabled={currentIndex === 0}
+                  className="p-1.5 text-gray-600 hover:bg-white rounded-md disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <span className="text-sm font-medium text-gray-600 px-2">
+                  {currentIndex + 1} of {totalTeams}
+                </span>
+                <button 
+                  onClick={onNext} 
+                  disabled={currentIndex === totalTeams - 1}
+                  className="p-1.5 text-gray-600 hover:bg-white rounded-md disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+            )}
+            <button onClick={onClose} className="btn btn-icon">
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         <div className="p-6 overflow-y-auto flex-1 bg-gray-50/50">
