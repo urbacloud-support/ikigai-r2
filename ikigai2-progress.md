@@ -158,22 +158,10 @@ backend deployed URL: https://ikigai2-backend.up.railway.app
 
 ## The Roadmap Ahead
 
-*All planned Super-Phases are now officially complete. The platform is ready for production launch.*
-
-### Super-Phase 4: Complete!
-**Focus:** Optimization, Polish, and Final Testing.
-
-**Key Achievements:**
-- **Centralized Error Handling:** Refactored `api.js` to natively intercept all `401 Unauthorized` and `403 Forbidden` API requests, triggering a global `auth-expired` event. `AuthContext.jsx` actively listens for this event to securely log out users across all open tabs simultaneously.
-- **Defensive UI Guards:** Deployed dynamic disabled states (`disabled={loading}`) and loading spinners on all critical action buttons (AssessmentModal, CreateEventForm, EditEventModal, EvaluatorSidebar) to prevent double-insertions and race conditions caused by rapid clicking.
-- **Database Indexing:** Applied compound MongoDB indexes to `Team.js` (`assignedTrack`, `assessments.eventId`, `assessments.evaluatorScores.evaluatorId`) and `Event.js` (`selectedTeams`) for maximum query efficiency during live events.
-- **Atomic MongoDB Concurrency Fix:** The stress test exposed a severe race condition during simultaneous saving (the "read-modify-write" `.save()` problem). We rewrote the `evaluator.controller.js` to use pure, native MongoDB `$push` and arrayFilter `$set` atomic operators. Evaluators can now submit scores concurrently without overwriting each other's data.
-- **End-to-End Stress Test:** Created a simulated stress test script (`stress_test.js`) firing 250 simultaneous evaluation requests (5 evaluators × 50 teams) in parallel. The script passes flawlessly with zero data loss under maximum concurrent load.
-- **UI Polish:** 
-  - Moved desktop navigation arrows to the backdrop of the `AssessmentModal` for better ergonomics.
-  - Enhanced history text areas with `whitespace-pre-wrap break-words` styling to seamlessly display lengthy task/progress updates.
-  - Renamed "Session Chair" to "Evaluator" globally.
-  - Dynamically hide the "TOTAL" column in the `AssessmentSummary.jsx` table when an event's criteria consists solely of non-numerical inputs.
+### [COMPLETED] Super-Phase 4: Optimization, Polish, and Final Testing
+1. **Performance Tuning:** Optimize database aggregations for large datasets.
+2. **Error Handling:** Centralize API error handling using Axios interceptors.
+3. **End-to-End Stress Test:** Create mock DUMMY data for 50+ teams and simulate a live event with multiple concurrent evaluators and judges.
 
 ### Phase 6: Frontend Admin Events (assessment-features branch)
 - **Created**: `CreateEventForm.jsx`, `ConfirmDeleteModal.jsx`, `EditEventModal.jsx`, `DefineCriteriaModal.jsx`, `EvaluatorList.jsx` in `pages/admin/components/`. These components break down the monolithic R1 logic into manageable, reusable pieces.
@@ -207,4 +195,10 @@ backend deployed URL: https://ikigai2-backend.up.railway.app
 - **Context:** Round 2 consists of 3 sessions: Mentor Session 1, Mentor Session 2, and Judge Session. M1 assigns tasks/rates progress. M2 checks M1's progress, overall progress, and assigns tasks. Judge checks both sessions' progress. Each session is represented as a separate Event in the DB, and each Event has exactly one Evaluator. The `assessments` array in the `Team` document was updated to store assessments grouped by `eventId`.
 - **[COMPLETED] Super-Phase 2: Admin Linking Events.** Added `linkedPastEvents` string array to Event schema and UI, allowing admins to chronologically link the 3 session events together.
 - **[COMPLETED] Super-Phase 3: Evaluator History.** Evaluator UI updates to allow viewing previous session history (e.g., viewing M1 data during M2, viewing M1 and M2 during Judge session), as well as a privileged `isJudge` role flag.
-- **[COMPLETED] Super-Phase 4: Optimization, Polish, and Final Testing.** UI refinements, defensive rendering, atomic database concurrency fixes, and a rigorous simulated stress test.
+- **[COMPLETED] Super-Phase 4: Optimization, Polish, and Final Testing.**
+  - **Centralized Error Handling:** Intercepting 401/403 API requests to trigger global `auth-expired` logout across all open tabs.
+  - **Defensive UI Guards:** `disabled={loading}` and spinners on critical action buttons (AssessmentModal, CreateEventForm, EditEventModal, EvaluatorSidebar) to prevent double-insertions.
+  - **Database Indexing:** Compound MongoDB indexes on `Team.js` and `Event.js` for query efficiency.
+  - **Atomic MongoDB Concurrency Fix:** Fixed `.save()` race conditions in `evaluator.controller.js` using atomic `$push` and arrayFilter `$set` operators for safe concurrent saving.
+  - **End-to-End Stress Test:** Verified flawless execution under load with a script firing 250 parallel evaluation requests.
+  - **UI Polish:** Ergonomic desktop navigation arrows, robust history text areas (`whitespace-pre-wrap`), "Session Chair" renamed to "Evaluator", and dynamic hiding of empty numerical columns in `AssessmentSummary`.
