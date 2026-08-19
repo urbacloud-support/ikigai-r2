@@ -25,6 +25,8 @@ export default function AssessmentSummary({ isOpen, onClose, teams, criteria, cu
   // Sort by total score descending
   mappedTeams.sort((a, b) => (b.assessment?.totalScore || 0) - (a.assessment?.totalScore || 0));
 
+  const hasNumericalCriteria = criteria.some(c => c.inputType === 'number');
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
@@ -64,10 +66,12 @@ export default function AssessmentSummary({ isOpen, onClose, teams, criteria, cu
                     <th className="px-4 py-3 font-semibold">Team Details</th>
                     {criteria.map((c, i) => (
                       <th key={i} className="px-4 py-3 font-semibold text-center whitespace-nowrap">
-                        {c.name} ({c.maxMarks})
+                        {c.name} {c.inputType === 'number' ? `(${c.maxMarks})` : ''}
                       </th>
                     ))}
-                    <th className="px-4 py-3 font-semibold text-center text-primary-700 bg-primary-50/50">Total</th>
+                    {hasNumericalCriteria && (
+                      <th className="px-4 py-3 font-semibold text-center text-primary-700 bg-primary-50/50">Total</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -86,7 +90,7 @@ export default function AssessmentSummary({ isOpen, onClose, teams, criteria, cu
                         </td>
                         
                         {isAbsent ? (
-                          <td colSpan={criteria.length + 1} className="px-4 py-3 text-center text-red-500 font-medium bg-red-50/30">
+                          <td colSpan={criteria.length + (hasNumericalCriteria ? 1 : 0)} className="px-4 py-3 text-center text-red-500 font-medium bg-red-50/30">
                             Marked Absent
                           </td>
                         ) : (
@@ -100,9 +104,11 @@ export default function AssessmentSummary({ isOpen, onClose, teams, criteria, cu
                                 </td>
                               );
                             })}
-                            <td className="px-4 py-3 text-center font-bold text-primary-700 bg-primary-50/30">
-                              {team.assessment.totalScore}
-                            </td>
+                            {hasNumericalCriteria && (
+                              <td className="px-4 py-3 text-center font-bold text-primary-700 bg-primary-50/30">
+                                {team.assessment.totalScore}
+                              </td>
+                            )}
                           </>
                         )}
                       </tr>
