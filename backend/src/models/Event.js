@@ -19,6 +19,11 @@ const eventSchema = new mongoose.Schema({
   date: { type: Date, required: true },
   location: { type: String },
   selectedTracks: [embeddedTrackSchema],
+  selectedTeams: [{ 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Team',
+    default: []
+  }],
   criteria: { type: [criteriaSchema], default: [] },
   linkedPastEvents: { type: [String], default: [] }
 }, { timestamps: true });

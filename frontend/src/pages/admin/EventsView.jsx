@@ -12,6 +12,7 @@ import TrackItem from './components/TrackItem';
 export default function EventsView() {
   const [events, setEvents] = useState([]);
   const [globalTracks, setGlobalTracks] = useState([]);
+  const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [expandedEvents, setExpandedEvents] = useState({});
@@ -23,14 +24,16 @@ export default function EventsView() {
 
   const fetchData = async () => {
     try {
-      const [eventsRes, tracksRes] = await Promise.all([
+      const [eventsRes, tracksRes, teamsRes] = await Promise.all([
         authFetch('/admin/events'),
-        authFetch('/admin/tracks')
+        authFetch('/admin/tracks'),
+        authFetch('/admin/teams')
       ]);
       
-      if (eventsRes.ok && tracksRes.ok) {
+      if (eventsRes.ok && tracksRes.ok && teamsRes.ok) {
         setEvents(await eventsRes.json());
         setGlobalTracks(await tracksRes.json());
+        setTeams(await teamsRes.json());
       }
     } catch (err) {
       console.error(err);
@@ -84,6 +87,7 @@ export default function EventsView() {
         <CreateEventForm 
           tracks={globalTracks} 
           allEvents={events}
+          allTeams={teams}
           onCreated={() => { setShowCreateForm(false); fetchData(); }} 
           onCancel={() => setShowCreateForm(false)} 
         />
@@ -166,6 +170,7 @@ export default function EventsView() {
         onClose={() => setEditModal({ isOpen: false, event: null })}
         event={editModal.event}
         allEvents={events}
+        allTeams={teams}
         onSaved={fetchData}
       />
 

@@ -12,8 +12,18 @@ const userSchema = new mongoose.Schema({
   teamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
   resetPasswordToken: String,
   resetPasswordExpires: Date,
-  isLocked: { type: Boolean, default: false },
-  assignedTrackIds: { type: [String], default: [] },
+  isLocked: {
+    type: Boolean,
+    default: false
+  },
+  isJudge: {
+    type: Boolean,
+    default: false
+  },
+  assignedTrackIds: {
+    type: [String],
+    default: []
+  },
   assignedEventId: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', default: null }
 }, { timestamps: true });
 

@@ -3,9 +3,9 @@ import { X, CheckCircle, UserX, Loader2 } from 'lucide-react';
 import { getProblemStatementName } from '../../../utils/mappingUtils';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-export default function AssessmentModal({ isOpen, onClose, team, currentIndex, totalTeams, onNext, onPrev, eventCriteria, currentUserId, currentEventId, isLocked, onSubmit, onMarkAbsent }) {
+export default function AssessmentModal({ isOpen, onClose, team, currentIndex, totalTeams, onNext, onPrev, eventCriteria, currentUserId, currentEventId, linkedPastEvents = [], isLocked, onSubmit, onMarkAbsent }) {
   const [criteria, setCriteria] = useState([]);
-  const [feedback, setFeedback] = useState('');
+  const [progress, setProgress] = useState('');
   const [mode, setMode] = useState('criteria'); // 'criteria' or 'absent'
   const [loading, setLoading] = useState(false);
 
@@ -15,7 +15,7 @@ export default function AssessmentModal({ isOpen, onClose, team, currentIndex, t
       const existing = eventObj?.evaluatorScores?.find(a => a.evaluatorId === currentUserId);
       if (existing) {
         setMode(existing.mode || 'criteria');
-        setFeedback(existing.feedback || '');
+        setProgress(existing.progress || '');
         if (existing.criteria && existing.criteria.length > 0) {
           setCriteria(existing.criteria);
         } else {
@@ -23,7 +23,7 @@ export default function AssessmentModal({ isOpen, onClose, team, currentIndex, t
         }
       } else {
         setMode('criteria');
-        setFeedback('');
+        setProgress('');
         initCriteria();
       }
     }
@@ -61,8 +61,9 @@ export default function AssessmentModal({ isOpen, onClose, team, currentIndex, t
     e.preventDefault();
     if (isLocked) return;
     setLoading(true);
-    await onSubmit({ criteria, totalScore: calculateTotal(), mode, feedback });
+    await onSubmit({ criteria, totalScore: calculateTotal(), mode, progress });
     setLoading(false);
+    onClose();
   };
 
   const handleAbsent = async () => {
@@ -140,6 +141,39 @@ export default function AssessmentModal({ isOpen, onClose, team, currentIndex, t
             </button>
           </div>
 
+          {linkedPastEvents.length > 0 && team.assessments && (
+            <div className="mb-6 bg-blue-50/50 p-4 rounded-xl border border-blue-100 shadow-sm">
+              <h4 className="text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
+                <CheckCircle size={16} className="text-blue-500" /> Past Session History
+              </h4>
+              <div className="flex flex-col gap-3">
+                {linkedPastEvents.map((eventName, idx) => {
+                  const pastEventObj = team.assessments.find(a => a.eventName === eventName);
+                  if (!pastEventObj || !pastEventObj.evaluatorScores || pastEventObj.evaluatorScores.length === 0) return null;
+                  
+                  // For evaluators, maybe we show all scores for that past event, or just their own?
+                  // Usually, history shows average or all evaluators. Let's just list the past evaluations.
+                  return (
+                    <div key={idx} className="bg-white p-3 rounded-lg border border-blue-100">
+                      <div className="text-xs font-bold text-blue-800 uppercase tracking-wider mb-2">{eventName}</div>
+                      {pastEventObj.evaluatorScores.map((score, sIdx) => (
+                        <div key={sIdx} className="mb-2 last:mb-0 pb-2 last:pb-0 border-b last:border-b-0 border-blue-50">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-sm font-semibold text-gray-800">{score.evaluatorName} ({score.role})</span>
+                            <span className="text-sm font-bold text-gray-900">{score.mode === 'absent' ? 'Absent' : `${score.totalScore} pts`}</span>
+                          </div>
+                          {score.progress && (
+                            <p className="text-xs text-gray-600 italic bg-gray-50 p-1.5 rounded">"{score.progress}"</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <form id="eval-form" onSubmit={handleSubmit} className={mode === 'absent' ? 'opacity-50 pointer-events-none' : ''}>
             <div className="space-y-5 mb-8">
               {criteria.map((c, index) => (
@@ -189,14 +223,13 @@ export default function AssessmentModal({ isOpen, onClose, team, currentIndex, t
             </div>
 
             <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm mb-4">
-              <label className="block font-semibold text-gray-800 mb-2">Overall Feedback</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Progress Notes</label>
               <textarea
-                value={feedback}
-                onChange={(e) => setFeedback(e.target.value)}
-                required={mode !== 'absent'}
-                className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 resize-none"
-                rows="3" placeholder="Constructive feedback for the team..."
-                disabled={isLocked}
+                disabled={isLocked || mode === 'absent'}
+                value={progress}
+                onChange={e => setProgress(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 disabled:bg-gray-50 resize-none text-sm"
+                rows="3" placeholder="Document the team's progress or task outcome..."
               />
             </div>
           </form>

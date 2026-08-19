@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, X, Users } from 'lucide-react';
 import { authFetch } from '../../../config/api';
+import TeamSelectionModal from './TeamSelectionModal';
 
-export default function CreateEventForm({ tracks, allEvents = [], onCreated, onCancel }) {
+export default function CreateEventForm({ tracks, allEvents = [], allTeams = [], onCreated, onCancel }) {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     date: '',
     trackIds: tracks.map(t => t._id), // All checked by default
-    linkedPastEvents: []
+    linkedPastEvents: [],
+    selectedTeams: []
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showTeamModal, setShowTeamModal] = useState(false);
 
   const handleTrackToggle = (id) => {
     setFormData(prev => ({
@@ -160,6 +163,40 @@ export default function CreateEventForm({ tracks, allEvents = [], onCreated, onC
         </div>
       </div>
 
+      <div className="mb-6 border-t border-gray-100 pt-6">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Specific Teams (Final Session UI)</label>
+            <p className="text-xs text-gray-500 mt-1">Select specific teams for Judges to evaluate in this event.</p>
+          </div>
+          <button 
+            type="button" 
+            onClick={() => setShowTeamModal(true)}
+            className="btn btn-secondary btn-sm bg-white border-gray-200"
+          >
+            <Users size={14} />
+            Manage Teams ({formData.selectedTeams.length})
+          </button>
+        </div>
+        
+        {formData.selectedTeams.length > 0 && (
+          <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mt-3 flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+            {formData.selectedTeams.map(tid => {
+              const team = allTeams.find(t => t._id === tid);
+              if (!team) return null;
+              return (
+                <div key={tid} className="bg-white border border-gray-200 text-xs font-semibold px-2 py-1 rounded-md flex items-center gap-1.5 shadow-sm">
+                  {team.teamName}
+                  <button type="button" onClick={() => setFormData(p => ({...p, selectedTeams: p.selectedTeams.filter(id => id !== tid)}))} className="text-red-500 hover:text-red-700 ml-1">
+                    <X size={12} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       <div className="flex justify-end gap-3">
         <button type="button" onClick={onCancel} className="btn btn-secondary">
           Cancel
@@ -172,6 +209,14 @@ export default function CreateEventForm({ tracks, allEvents = [], onCreated, onC
           Create Event
         </button>
       </div>
+
+      <TeamSelectionModal
+        isOpen={showTeamModal}
+        onClose={() => setShowTeamModal(false)}
+        allTeams={allTeams}
+        selectedTeams={formData.selectedTeams}
+        onSave={(teams) => setFormData(prev => ({ ...prev, selectedTeams: teams }))}
+      />
     </form>
   );
 }

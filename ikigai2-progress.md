@@ -131,6 +131,38 @@ backend deployed URL: https://ikigai2-backend.up.railway.app
 - **Modified**: `backend/src/controllers/evaluator.controller.js` - Rebuilt to support `getSessionData` (loads user + event criteria), `getAssignedTeams` (fetches teams based on evaluator's assigned track code), `submitAssessment`, and `markAbsent`. All assessment routes now explicitly check for `user.isLocked` before proceeding.
 - **Modified**: `backend/src/routes/evaluator.routes.js` - Wired up new endpoints with the correct `requireAuth('evaluator', 'judge')` middleware.
 
+### Super-Phase 2: Complete!
+**Focus:** Enhancing Event Linking and Management for multi-round evaluations.
+
+**Key Achievements:**
+- Successfully integrated Event Linking (`linkedPastEvents`) functionality into `CreateEventForm.jsx` and `EditEventModal.jsx`.
+- Verified nested routing in `AdminLayout.jsx`.
+- Updated database schemas and Admin controllers to store and retrieve past events safely.
+- Resolved styling issues in `EventsView.jsx` across mobile and desktop.
+
+### Super-Phase 3: Complete!
+**Focus:** Advanced Evaluator Roles, Team Filtering UI, Session History, and Exports.
+
+**Key Achievements:**
+- **Privileged Judge Role:** Introduced `isJudge` flag for Evaluators in the `User` schema.
+- **Team Filtering UI:** Created a sleek, list-based `TeamSelectionModal` for Admin to hand-pick teams for the final session (regardless of their track). Events now natively store `selectedTeams`.
+- **API Adjustments:** Modified Evaluator controllers to prioritize `selectedTeams` when a user is flagged as a Judge, giving them unrestricted access to the assigned teams.
+- **Session History:** Updated `AssessmentModal.jsx` to render linked past session data (scores and progress notes) for each team in a readonly, visually appealing UI.
+- **Advanced Exports:** Replaced standard CSV export in `ProgressView.jsx` with advanced XLSX and PDF export functionalities, capturing full criteria breakdowns and progress notes using `xlsx` and `jspdf-autotable`.
+- **Field Consistency:** Renamed legacy `feedback` references to `progress` across models, controllers, and UI.
+
+## Current State
+
+* **Admin Role:** Fully operational. Can create events, define custom criteria, link past events, select specific teams for final sessions, manage users (and Judges), and export advanced assessment reports.
+* **Evaluator/Judge Role:** Fully operational. Judges can view cross-track assigned teams. All evaluators can see historical progress notes in their assessment modals.
+
+## The Roadmap Ahead
+
+### Super-Phase 4: Optimization, Polish, and Final Testing
+1. **Performance Tuning:** Optimize database aggregations for large datasets.
+2. **Error Handling:** Centralize API error handling using Axios interceptors.
+3. **End-to-End Stress Test:** Create mock DUMMY data for 50+ teams and simulate a live event with multiple concurrent evaluators and judges.
+
 ### Phase 6: Frontend Admin Events (assessment-features branch)
 - **Created**: `CreateEventForm.jsx`, `ConfirmDeleteModal.jsx`, `EditEventModal.jsx`, `DefineCriteriaModal.jsx`, `EvaluatorList.jsx` in `pages/admin/components/`. These components break down the monolithic R1 logic into manageable, reusable pieces.
 - **Modified**: `pages/admin/EventsView.jsx` - Rebuilt from scratch to implement the new componentized architecture. Allows creating events with static 5-track toggles, defining criteria (event-scoped), and adding/assigning evaluators inline per track.
@@ -158,8 +190,8 @@ backend deployed URL: https://ikigai2-backend.up.railway.app
   - Fixed a React child rendering error in `AssessmentSummary` by ensuring criteria objects are parsed down to primitive score values, appropriately formatting booleans as Yes/No.
 - **Dummy Data**: Created `temp/seed_dummy_teams.js` to seed 15 dummy teams (3 per track) with distinct `[DUMMY]` naming for testing the Progress and Evaluator Console views.
 
-### Pending: Native Assessment Schema Refactor (Super-Phases)
-- **Super-Phase 1: Teams Schema Change.** Upgrading `assessments` array to a nested hierarchy: `Team -> events array -> evaluator scores`. 
-- **Context:** Round 2 consists of 3 sessions: Mentor Session 1, Mentor Session 2, and Judge Session. M1 assigns tasks/rates progress. M2 checks M1's progress, overall progress, and assigns tasks. Judge checks both sessions' progress. Each session is represented as a separate Event in the DB, and each Event has exactly one Evaluator. The `assessments` array in the `Team` document will be updated to store assessments grouped by `eventId`.
-- **Super-Phase 2: Admin Linking Events.** Linking the 3 session events together to track progression across sessions.
-- **Super-Phase 3: Evaluator History.** Evaluator UI updates to allow viewing previous session history (e.g., viewing M1 data during M2, viewing M1 and M2 during Judge session).
+### Native Assessment Schema Refactor (Super-Phases)
+- **[COMPLETED] Super-Phase 1: Teams Schema Change.** Upgraded `assessments` array to a nested hierarchy: `Team -> events array -> evaluator scores`. 
+- **Context:** Round 2 consists of 3 sessions: Mentor Session 1, Mentor Session 2, and Judge Session. M1 assigns tasks/rates progress. M2 checks M1's progress, overall progress, and assigns tasks. Judge checks both sessions' progress. Each session is represented as a separate Event in the DB, and each Event has exactly one Evaluator. The `assessments` array in the `Team` document was updated to store assessments grouped by `eventId`.
+- **[COMPLETED] Super-Phase 2: Admin Linking Events.** Added `linkedPastEvents` string array to Event schema and UI, allowing admins to chronologically link the 3 session events together.
+- **[PENDING] Super-Phase 3: Evaluator History.** Evaluator UI updates to allow viewing previous session history (e.g., viewing M1 data during M2, viewing M1 and M2 during Judge session), as well as a privileged `isJudge` role flag.

@@ -21,7 +21,17 @@ export const getSessionData = async (req, res) => {
 export const getAssignedTeams = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    if (!user || !user.assignedTrackIds || user.assignedTrackIds.length === 0) {
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    if (user.isJudge && user.assignedEventId) {
+      const event = await Event.findById(user.assignedEventId);
+      if (event && event.selectedTeams && event.selectedTeams.length > 0) {
+        const teams = await Team.find({ _id: { $in: event.selectedTeams } });
+        return res.json(teams);
+      }
+    }
+
+    if (!user.assignedTrackIds || user.assignedTrackIds.length === 0) {
       return res.json([]);
     }
     
@@ -33,7 +43,7 @@ export const getAssignedTeams = async (req, res) => {
 };
 
 export const submitAssessment = async (req, res) => {
-  const { criteria, totalScore, mode, feedback } = req.body;
+  const { criteria, totalScore, mode, progress } = req.body;
   try {
     const user = await User.findById(req.user._id);
     if (user.isLocked) {
@@ -70,7 +80,7 @@ export const submitAssessment = async (req, res) => {
       criteria: criteria || [],
       totalScore,
       mode: mode || 'criteria',
-      feedback
+      progress
     };
 
     if (existingIndex !== -1) {

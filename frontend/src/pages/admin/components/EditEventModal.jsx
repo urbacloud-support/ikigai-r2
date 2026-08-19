@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar } from 'lucide-react';
 import { authFetch } from '../../../config/api';
+import TeamSelectionModal from './TeamSelectionModal';
+import { Users } from 'lucide-react';
 
-export default function EditEventModal({ isOpen, onClose, event, allEvents = [], onSaved }) {
+export default function EditEventModal({ isOpen, onClose, event, allEvents = [], allTeams = [], onSaved }) {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     date: '',
-    linkedPastEvents: []
+    linkedPastEvents: [],
+    selectedTeams: []
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showTeamModal, setShowTeamModal] = useState(false);
 
   useEffect(() => {
     if (event) {
@@ -18,7 +22,8 @@ export default function EditEventModal({ isOpen, onClose, event, allEvents = [],
         title: event.title || '',
         description: event.description || '',
         date: event.date ? new Date(event.date).toISOString().split('T')[0] : '',
-        linkedPastEvents: event.linkedPastEvents || []
+        linkedPastEvents: event.linkedPastEvents || [],
+        selectedTeams: event.selectedTeams || []
       });
     }
   }, [event]);
@@ -156,6 +161,40 @@ export default function EditEventModal({ isOpen, onClose, event, allEvents = [],
               )}
             </div>
           </div>
+
+          <div className="border-t border-gray-100 pt-6 mt-4">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Specific Teams (Final Session UI)</label>
+                <p className="text-xs text-gray-500 mt-1">Select specific teams for Judges to evaluate in this event.</p>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setShowTeamModal(true)}
+                className="btn btn-secondary btn-sm bg-white border-gray-200"
+              >
+                <Users size={14} />
+                Manage Teams ({formData.selectedTeams.length})
+              </button>
+            </div>
+            
+            {formData.selectedTeams.length > 0 && (
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mt-3 flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                {formData.selectedTeams.map(tid => {
+                  const team = allTeams.find(t => t._id === tid);
+                  if (!team) return null;
+                  return (
+                    <div key={tid} className="bg-white border border-gray-200 text-xs font-semibold px-2 py-1 rounded-md flex items-center gap-1.5 shadow-sm">
+                      {team.teamName}
+                      <button type="button" onClick={() => setFormData(p => ({...p, selectedTeams: p.selectedTeams.filter(id => id !== tid)}))} className="text-red-500 hover:text-red-700 ml-1">
+                        <X size={12} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="p-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-100">
@@ -171,6 +210,14 @@ export default function EditEventModal({ isOpen, onClose, event, allEvents = [],
           </button>
         </div>
       </div>
+
+      <TeamSelectionModal
+        isOpen={showTeamModal}
+        onClose={() => setShowTeamModal(false)}
+        allTeams={allTeams}
+        selectedTeams={formData.selectedTeams}
+        onSave={(teams) => setFormData(prev => ({ ...prev, selectedTeams: teams }))}
+      />
     </div>
   );
 }

@@ -16,7 +16,7 @@ export const getEvents = async (req, res) => {
 };
 
 export const createEvent = async (req, res) => {
-  const { title, description, date, location, trackIds, linkedPastEvents } = req.body;
+  const { title, description, date, location, trackIds, linkedPastEvents, selectedTeams } = req.body;
   try {
     let query = {};
     if (trackIds && trackIds.length > 0) {
@@ -31,7 +31,15 @@ export const createEvent = async (req, res) => {
       description: t.description
     }));
 
-    const event = new Event({ title, description, date, location, selectedTracks, linkedPastEvents: linkedPastEvents || [] });
+    const event = new Event({ 
+      title, 
+      description, 
+      date, 
+      location, 
+      selectedTracks, 
+      linkedPastEvents: linkedPastEvents || [],
+      selectedTeams: selectedTeams || [] 
+    });
     const createdEvent = await event.save();
     res.status(201).json(createdEvent);
   } catch (error) {
@@ -40,7 +48,7 @@ export const createEvent = async (req, res) => {
 };
 
 export const updateEvent = async (req, res) => {
-  const { title, description, date, linkedPastEvents } = req.body;
+  const { title, description, date, linkedPastEvents, selectedTeams } = req.body;
   try {
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Event not found' });
@@ -49,6 +57,7 @@ export const updateEvent = async (req, res) => {
     if (description !== undefined) event.description = description;
     if (date) event.date = date;
     if (linkedPastEvents !== undefined) event.linkedPastEvents = linkedPastEvents;
+    if (selectedTeams !== undefined) event.selectedTeams = selectedTeams;
     
     const updatedEvent = await event.save();
     res.json(updatedEvent);
@@ -131,7 +140,7 @@ export const getUsers = async (req, res) => {
 };
 
 export const createUser = async (req, res) => {
-  const { name, email, role } = req.body;
+  const { name, email, role, isJudge } = req.body;
   try {
     const userExists = await User.findOne({ email });
     if (userExists) return res.status(400).json({ message: 'User already exists' });
@@ -154,6 +163,7 @@ export const createUser = async (req, res) => {
       name,
       email,
       role,
+      isJudge: isJudge || false,
       password: hashPassword(generatedPassword)
     });
 
@@ -167,7 +177,7 @@ export const createUser = async (req, res) => {
 };
 
 export const updateUser = async (req, res) => {
-  const { name, email, role } = req.body;
+  const { name, email, role, isJudge } = req.body;
   try {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
@@ -175,6 +185,7 @@ export const updateUser = async (req, res) => {
     if (name) user.name = name;
     if (email) user.email = email;
     if (role) user.role = role;
+    if (isJudge !== undefined) user.isJudge = isJudge;
     
     const updatedUser = await user.save();
     const userObj = updatedUser.toObject();
@@ -202,7 +213,7 @@ export const assignEvaluator = async (req, res) => {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
     
-    if (!user.assignedTrackIds.includes(trackCode)) {
+    if (trackCode && !user.assignedTrackIds.includes(trackCode)) {
       user.assignedTrackIds.push(trackCode);
     }
     user.assignedEventId = eventId;

@@ -4,6 +4,8 @@ import { ROLE_LABELS } from '../../config/constants';
 import { Loader2, Mail, Shield, Plus, Trash2, Users, ChevronDown, ChevronRight } from 'lucide-react';
 import CreateUserModal from './components/CreateUserModal';
 import ConfirmDeleteModal from './components/ConfirmDeleteModal';
+import EditUserModal from './components/EditUserModal';
+import { Pencil } from 'lucide-react';
 
 const getInitials = (name) => {
   if (!name) return 'U';
@@ -22,6 +24,7 @@ export default function UsersView() {
   
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, user: null });
+  const [editModal, setEditModal] = useState({ isOpen: false, user: null });
 
   const fetchUsers = async () => {
     try {
@@ -124,19 +127,32 @@ export default function UsersView() {
                                   {getInitials(user.name)}
                                 </div>
                                 <div>
-                                  <h3 className="font-semibold text-gray-800">{user.name}</h3>
+                                  <div className="flex items-center gap-2">
+                                    <h3 className="font-semibold text-gray-800">{user.name}</h3>
+                                    {user.role === 'evaluator' && user.isJudge && (
+                                      <Shield size={14} className="text-primary-600 ml-1" title="Judge" />
+                                    )}
+                                  </div>
                                   <div className="flex items-center text-xs text-gray-500 mt-0.5 gap-1.5">
                                     <Mail size={12} />
                                     {user.email}
                                   </div>
                                 </div>
                               </div>
-                              <button 
-                                onClick={() => setDeleteModal({ isOpen: true, user })}
-                                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                              >
-                                <Trash2 size={14} />
-                              </button>
+                              <div className="flex gap-2">
+                                <button 
+                                  onClick={() => setEditModal({ isOpen: true, user })}
+                                  className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                                >
+                                  <Pencil size={14} />
+                                </button>
+                                <button 
+                                  onClick={() => setDeleteModal({ isOpen: true, user })}
+                                  className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -160,7 +176,14 @@ export default function UsersView() {
                                       {getInitials(user.name)}
                                     </div>
                                     <div>
-                                      <div className="font-semibold text-gray-900">{user.name}</div>
+                                      <div className="font-semibold text-gray-900 flex items-center gap-2">
+                                        {user.name}
+                                        {user.role === 'evaluator' && user.isJudge && (
+                                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-primary-50 text-primary-700 border border-primary-200">
+                                            <Shield size={10} /> JUDGE
+                                          </span>
+                                        )}
+                                      </div>
                                       <div className="text-sm text-gray-500 flex items-center gap-1.5 mt-0.5">
                                         <Mail size={12} className="text-gray-400" />
                                         {user.email}
@@ -169,13 +192,22 @@ export default function UsersView() {
                                   </div>
                                 </td>
                                 <td className="px-6 py-4 text-right">
-                                  <button 
-                                    onClick={() => setDeleteModal({ isOpen: true, user })}
-                                    className="btn btn-icon hover:!bg-red-50 hover:!text-red-600 opacity-0 group-hover:opacity-100"
-                                    title="Delete User"
-                                  >
-                                    <Trash2 size={18} />
-                                  </button>
+                                  <div className="flex justify-end gap-2">
+                                    <button 
+                                      onClick={() => setEditModal({ isOpen: true, user })}
+                                      className="btn btn-icon hover:!bg-primary-50 hover:!text-primary-600 opacity-0 group-hover:opacity-100"
+                                      title="Edit User"
+                                    >
+                                      <Pencil size={18} />
+                                    </button>
+                                    <button 
+                                      onClick={() => setDeleteModal({ isOpen: true, user })}
+                                      className="btn btn-icon hover:!bg-red-50 hover:!text-red-600 opacity-0 group-hover:opacity-100"
+                                      title="Delete User"
+                                    >
+                                      <Trash2 size={18} />
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             ))}
@@ -203,6 +235,13 @@ export default function UsersView() {
         onConfirm={handleDelete}
         itemName={deleteModal.user?.name || ''}
         itemType="User"
+      />
+
+      <EditUserModal
+        isOpen={editModal.isOpen}
+        onClose={() => setEditModal({ isOpen: false, user: null })}
+        onSaved={fetchUsers}
+        user={editModal.user}
       />
     </div>
   );

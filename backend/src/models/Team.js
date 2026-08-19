@@ -5,9 +5,9 @@ const assessmentSchema = new mongoose.Schema({
   evaluatorName: { type: String },
   role: { type: String, enum: ['evaluator', 'judge'], required: true },
   criteria: { type: [mongoose.Schema.Types.Mixed], default: [] },
-  totalScore: { type: Number, required: true },
+  totalScore: { type: Number, default: 0 },
   mode: { type: String, enum: ['criteria', 'absent'], default: 'criteria' },
-  feedback: { type: String }
+  progress: { type: String }
 }, { timestamps: true });
 
 const eventAssessmentSchema = new mongoose.Schema({

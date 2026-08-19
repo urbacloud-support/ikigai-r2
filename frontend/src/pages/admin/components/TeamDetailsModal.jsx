@@ -122,10 +122,10 @@ export default function TeamDetailsModal({ isOpen, onClose, team }) {
                                   </div>
                                 </div>
                                 
-                                {assessment.feedback && (
-                                  <div className="mt-4 bg-gray-50 p-3 rounded-lg text-sm text-gray-700 italic flex items-start gap-2 border border-gray-100">
-                                    <MessageSquare size={16} className="text-gray-400 mt-0.5 shrink-0" />
-                                    <span>"{assessment.feedback}"</span>
+                                {assessment.progress && (
+                                  <div className="mt-3 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg flex items-start gap-2">
+                                    <MessageSquare size={16} className="text-gray-400 mt-0.5" />
+                                    <span>"{assessment.progress}"</span>
                                   </div>
                                 )}
 
