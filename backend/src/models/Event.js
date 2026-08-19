@@ -27,5 +27,6 @@ const eventSchema = new mongoose.Schema({
   criteria: { type: [criteriaSchema], default: [] },
   linkedPastEvents: { type: [String], default: [] }
 }, { timestamps: true });
+eventSchema.index({ selectedTeams: 1 });
 
 export default mongoose.model('Event', eventSchema, 'events');

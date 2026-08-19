@@ -1,10 +1,14 @@
 import React from 'react';
-import { User, ChevronRight, Lock, Unlock } from 'lucide-react';
+import { User, ChevronRight, Lock, Unlock, Loader2 } from 'lucide-react';
 import { authFetch } from '../../../config/api';
 
 export default function EvaluatorSidebar({ evaluators, selectedEvaluatorId, onSelect, onRefresh }) {
+  const [loadingId, setLoadingId] = React.useState(null);
+
   const toggleLock = async (evaluator, e) => {
     e.stopPropagation();
+    if (loadingId) return;
+    setLoadingId(evaluator._id);
     try {
       const res = await authFetch(`/admin/users/${evaluator._id}/lock`, { method: 'PATCH' });
       if (res.ok) {
@@ -12,6 +16,8 @@ export default function EvaluatorSidebar({ evaluators, selectedEvaluatorId, onSe
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoadingId(null);
     }
   };
 
@@ -45,10 +51,11 @@ export default function EvaluatorSidebar({ evaluators, selectedEvaluatorId, onSe
           <div className="flex items-center gap-2 pl-2 border-l border-gray-200">
             <button
               onClick={(e) => toggleLock(evaluator, e)}
-              className={`btn btn-icon btn-sm ${evaluator.isLocked ? 'hover:!bg-red-50 hover:!text-red-600 text-red-500' : 'hover:!bg-green-50 hover:!text-green-600 text-green-600'}`}
+              disabled={loadingId === evaluator._id}
+              className={`btn btn-icon btn-sm ${evaluator.isLocked ? 'hover:!bg-red-50 hover:!text-red-600 text-red-500' : 'hover:!bg-green-50 hover:!text-green-600 text-green-600'} disabled:opacity-50 disabled:cursor-not-allowed`}
               title={evaluator.isLocked ? "Unlock Access" : "Lock Access"}
             >
-              {evaluator.isLocked ? <Lock size={16} /> : <Unlock size={16} />}
+              {loadingId === evaluator._id ? <Loader2 size={16} className="animate-spin text-gray-500" /> : (evaluator.isLocked ? <Lock size={16} /> : <Unlock size={16} />)}
             </button>
             <ChevronRight size={16} className={selectedEvaluatorId === evaluator._id ? 'text-primary-500' : 'text-gray-300'} />
           </div>

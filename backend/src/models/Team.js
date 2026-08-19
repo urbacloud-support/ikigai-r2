@@ -60,5 +60,8 @@ const teamSchema = new mongoose.Schema({
   status: { type: String, default: 'Pending' },
   assessments: [eventAssessmentSchema]
 }, { timestamps: true });
+teamSchema.index({ assignedTrack: 1 });
+teamSchema.index({ 'assessments.eventId': 1 });
+teamSchema.index({ 'assessments.evaluatorScores.evaluatorId': 1 });
 
 export default mongoose.model('Team', teamSchema, 'teams');

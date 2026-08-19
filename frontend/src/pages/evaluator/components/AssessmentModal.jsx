@@ -147,7 +147,7 @@ export default function AssessmentModal({ isOpen, onClose, team, currentIndex, t
                             <span className="text-sm font-bold text-gray-900">{score.mode === 'absent' ? 'Absent' : `${score.totalScore} pts`}</span>
                           </div>
                           {score.progress && (
-                            <p className="text-xs text-gray-600 italic bg-gray-50 p-1.5 rounded">"{score.progress}"</p>
+                            <p className="text-xs text-gray-600 italic bg-gray-50 p-2 rounded whitespace-pre-wrap break-words border border-gray-100">"{score.progress}"</p>
                           )}
                         </div>
                       ))}

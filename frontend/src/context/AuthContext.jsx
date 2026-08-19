@@ -9,6 +9,12 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const logout = () => {
+    localStorage.removeItem('ikigai_token');
+    localStorage.removeItem('ikigai_user');
+    setUser(null);
+  };
+
   useEffect(() => {
     const storedUser = localStorage.getItem('ikigai_user');
     const token = localStorage.getItem('ikigai_token');
@@ -30,8 +36,17 @@ export const AuthProvider = ({ children }) => {
       }
     };
     
+    const handleAuthExpired = () => {
+      logout();
+    };
+
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('auth-expired', handleAuthExpired);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('auth-expired', handleAuthExpired);
+    };
   }, []);
 
   const login = async (email, password) => {
@@ -56,11 +71,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('ikigai_token');
-    localStorage.removeItem('ikigai_user');
-    setUser(null);
-  };
+
 
   return (
     <AuthContext.Provider value={{ user, login, logout, loading }}>

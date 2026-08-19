@@ -9,7 +9,7 @@ export const getSessionData = async (req, res) => {
     
     let event = null;
     if (user.assignedEventId) {
-      event = await Event.findById(user.assignedEventId).select('_id title criteria selectedTracks');
+      event = await Event.findById(user.assignedEventId).select('_id title criteria selectedTracks linkedPastEvents');
     }
     
     res.json({ user, event });
@@ -50,7 +50,8 @@ export const submitAssessment = async (req, res) => {
       return res.status(403).json({ locked: true, message: 'Your assessment access is locked.' });
     }
 
-    const team = await Team.findById(req.params.id);
+    const teamId = req.params.id;
+    const team = await Team.findById(teamId); // just to check existence
     if (!team) return res.status(404).json({ message: 'Team not found' });
 
     if (!user.assignedEventId) {
@@ -59,18 +60,12 @@ export const submitAssessment = async (req, res) => {
     const event = await Event.findById(user.assignedEventId);
     if (!event) return res.status(400).json({ message: 'Assigned event not found' });
 
-    let eventObjIndex = team.assessments.findIndex(a => a.eventId.toString() === user.assignedEventId.toString());
-    if (eventObjIndex === -1) {
-      team.assessments.push({
-        eventId: user.assignedEventId,
-        eventName: event.title,
-        evaluatorScores: []
-      });
-      eventObjIndex = team.assessments.length - 1;
-    }
-
-    const existingIndex = team.assessments[eventObjIndex].evaluatorScores.findIndex(
-      a => a.evaluatorId.toString() === req.user._id.toString()
+    const eventId = user.assignedEventId;
+    
+    // Atomically ensure event object exists
+    await Team.updateOne(
+      { _id: teamId, "assessments.eventId": { $ne: eventId } },
+      { $push: { assessments: { eventId, eventName: event.title, evaluatorScores: [] } } }
     );
 
     const assessmentData = {
@@ -83,20 +78,45 @@ export const submitAssessment = async (req, res) => {
       progress
     };
 
-    if (existingIndex !== -1) {
-      team.assessments[eventObjIndex].evaluatorScores[existingIndex] = assessmentData;
-    } else {
-      team.assessments[eventObjIndex].evaluatorScores.push(assessmentData);
+    const setObj = {};
+    for (const [k, v] of Object.entries(assessmentData)) {
+       setObj[`assessments.$[eventElem].evaluatorScores.$[evalElem].${k}`] = v;
     }
 
-    await team.save();
+    // Atomically try to update if evaluator score already exists
+    const updateResult = await Team.updateOne(
+      { 
+        _id: teamId, 
+        "assessments.eventId": eventId,
+        "assessments.evaluatorScores.evaluatorId": req.user._id
+      },
+      {
+        $set: setObj
+      },
+      {
+        arrayFilters: [
+          { "eventElem.eventId": eventId },
+          { "evalElem.evaluatorId": req.user._id }
+        ]
+      }
+    );
+
+    // If it didn't exist, push it atomically
+    if (updateResult.matchedCount === 0) {
+      await Team.updateOne(
+        { _id: teamId, "assessments.eventId": eventId },
+        { $push: { "assessments.$.evaluatorScores": assessmentData } }
+      );
+    }
+
+    const updatedTeam = await Team.findById(teamId);
 
     const io = req.app.get('io');
-    if (io && team.eventId) {
-      io.to(`event:${team.eventId}`).emit('assessment-saved', { teamId: team._id, totalScore, mode: assessmentData.mode });
+    if (io && updatedTeam.eventId) {
+      io.to(`event:${updatedTeam.eventId}`).emit('assessment-saved', { teamId: updatedTeam._id, totalScore, mode: assessmentData.mode });
     }
 
-    res.json(team);
+    res.json(updatedTeam);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -109,7 +129,8 @@ export const markAbsent = async (req, res) => {
       return res.status(403).json({ locked: true, message: 'Your assessment access is locked.' });
     }
 
-    const team = await Team.findById(req.params.id);
+    const teamId = req.params.id;
+    const team = await Team.findById(teamId);
     if (!team) return res.status(404).json({ message: 'Team not found' });
 
     if (!user.assignedEventId) {
@@ -118,18 +139,11 @@ export const markAbsent = async (req, res) => {
     const event = await Event.findById(user.assignedEventId);
     if (!event) return res.status(400).json({ message: 'Assigned event not found' });
 
-    let eventObjIndex = team.assessments.findIndex(a => a.eventId.toString() === user.assignedEventId.toString());
-    if (eventObjIndex === -1) {
-      team.assessments.push({
-        eventId: user.assignedEventId,
-        eventName: event.title,
-        evaluatorScores: []
-      });
-      eventObjIndex = team.assessments.length - 1;
-    }
+    const eventId = user.assignedEventId;
 
-    const existingIndex = team.assessments[eventObjIndex].evaluatorScores.findIndex(
-      a => a.evaluatorId.toString() === req.user._id.toString()
+    await Team.updateOne(
+      { _id: teamId, "assessments.eventId": { $ne: eventId } },
+      { $push: { assessments: { eventId, eventName: event.title, evaluatorScores: [] } } }
     );
 
     const assessmentData = {
@@ -141,20 +155,43 @@ export const markAbsent = async (req, res) => {
       mode: 'absent'
     };
 
-    if (existingIndex !== -1) {
-      team.assessments[eventObjIndex].evaluatorScores[existingIndex] = assessmentData;
-    } else {
-      team.assessments[eventObjIndex].evaluatorScores.push(assessmentData);
+    const setObj = {};
+    for (const [k, v] of Object.entries(assessmentData)) {
+       setObj[`assessments.$[eventElem].evaluatorScores.$[evalElem].${k}`] = v;
     }
 
-    await team.save();
+    const updateResult = await Team.updateOne(
+      { 
+        _id: teamId, 
+        "assessments.eventId": eventId,
+        "assessments.evaluatorScores.evaluatorId": req.user._id
+      },
+      {
+        $set: setObj
+      },
+      {
+        arrayFilters: [
+          { "eventElem.eventId": eventId },
+          { "evalElem.evaluatorId": req.user._id }
+        ]
+      }
+    );
+
+    if (updateResult.matchedCount === 0) {
+      await Team.updateOne(
+        { _id: teamId, "assessments.eventId": eventId },
+        { $push: { "assessments.$.evaluatorScores": assessmentData } }
+      );
+    }
+
+    const updatedTeam = await Team.findById(teamId);
 
     const io = req.app.get('io');
-    if (io && team.eventId) {
-      io.to(`event:${team.eventId}`).emit('assessment-saved', { teamId: team._id, totalScore: 0, mode: 'absent' });
+    if (io && updatedTeam.eventId) {
+      io.to(`event:${updatedTeam.eventId}`).emit('assessment-saved', { teamId: updatedTeam._id, totalScore: 0, mode: 'absent' });
     }
 
-    res.json(team);
+    res.json(updatedTeam);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

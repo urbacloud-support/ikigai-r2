@@ -106,7 +106,7 @@ export default function TeamDetailsModal({ isOpen, onClose, team }) {
                                   <div>
                                     <p className="font-bold text-gray-900 text-base">{assessment.evaluatorName || 'Unknown Evaluator'}</p>
                                     <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mt-1">
-                                      {assessment.role === 'judge' ? 'Judge' : 'Session Chair'}
+                                      {assessment.role === 'judge' ? 'Judge' : 'Evaluator'}
                                     </p>
                                   </div>
                                   <div className="shrink-0 text-right">

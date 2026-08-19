@@ -276,6 +276,7 @@ export default function EvaluatorConsole() {
         eventCriteria={eventCriteria}
         currentUserId={session.user?._id}
         currentEventId={session.event?._id}
+        linkedPastEvents={session.event?.linkedPastEvents || []}
         isLocked={session.user?.isLocked}
         onSubmit={handleAssessmentSubmit}
         onMarkAbsent={handleMarkAbsent}

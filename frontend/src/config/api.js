@@ -11,5 +11,12 @@ export async function authFetch(url, options = {}) {
     ...authHeaders(),
     ...(options.headers || {}),
   };
-  return fetch(`${API_BASE}${url}`, { ...options, headers });
+  const response = await fetch(`${API_BASE}${url}`, { ...options, headers });
+  
+  // Centralized Error Handling for expired sessions
+  if (response.status === 401 || response.status === 403) {
+    window.dispatchEvent(new CustomEvent('auth-expired'));
+  }
+  
+  return response;
 }
