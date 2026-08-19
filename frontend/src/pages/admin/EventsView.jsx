@@ -83,6 +83,7 @@ export default function EventsView() {
       {showCreateForm && (
         <CreateEventForm 
           tracks={globalTracks} 
+          allEvents={events}
           onCreated={() => { setShowCreateForm(false); fetchData(); }} 
           onCancel={() => setShowCreateForm(false)} 
         />
@@ -164,6 +165,7 @@ export default function EventsView() {
         isOpen={editModal.isOpen}
         onClose={() => setEditModal({ isOpen: false, event: null })}
         event={editModal.event}
+        allEvents={events}
         onSaved={fetchData}
       />
 

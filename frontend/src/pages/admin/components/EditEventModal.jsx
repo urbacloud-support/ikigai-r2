@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { X, Calendar } from 'lucide-react';
 import { authFetch } from '../../../config/api';
 
-export default function EditEventModal({ isOpen, onClose, event, onSaved }) {
+export default function EditEventModal({ isOpen, onClose, event, allEvents = [], onSaved }) {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    date: ''
+    date: '',
+    linkedPastEvents: []
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -16,12 +17,32 @@ export default function EditEventModal({ isOpen, onClose, event, onSaved }) {
       setFormData({
         title: event.title || '',
         description: event.description || '',
-        date: event.date ? new Date(event.date).toISOString().split('T')[0] : ''
+        date: event.date ? new Date(event.date).toISOString().split('T')[0] : '',
+        linkedPastEvents: event.linkedPastEvents || []
       });
     }
   }, [event]);
 
   if (!isOpen) return null;
+
+  const addLinkedEvent = (e) => {
+    const selectedTitle = e.target.value;
+    if (selectedTitle && !formData.linkedPastEvents.includes(selectedTitle)) {
+      setFormData(prev => ({
+        ...prev,
+        linkedPastEvents: [...prev.linkedPastEvents, selectedTitle]
+      }));
+    }
+    // Reset dropdown
+    e.target.value = '';
+  };
+
+  const removeLinkedEvent = (title) => {
+    setFormData(prev => ({
+      ...prev,
+      linkedPastEvents: prev.linkedPastEvents.filter(t => t !== title)
+    }));
+  };
 
   const handleSave = async () => {
     if (!formData.title || !formData.date) {
@@ -100,6 +121,40 @@ export default function EditEventModal({ isOpen, onClose, event, onSaved }) {
               rows={3}
               className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 resize-none"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Linked Past Events</label>
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+              <select 
+                onChange={addLinkedEvent}
+                defaultValue=""
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 mb-3 bg-white"
+              >
+                <option value="" disabled>Select an event to link...</option>
+                {allEvents
+                  .filter(ev => ev._id !== event?._id && !formData.linkedPastEvents.includes(ev.title))
+                  .map(ev => (
+                    <option key={ev._id} value={ev.title}>{ev.title}</option>
+                  ))
+                }
+              </select>
+
+              {formData.linkedPastEvents.length > 0 ? (
+                <div className="flex flex-col gap-2">
+                  {formData.linkedPastEvents.map((title, idx) => (
+                    <div key={idx} className="flex justify-between items-center bg-white border border-gray-200 p-2.5 rounded-lg shadow-sm">
+                      <span className="text-sm font-medium text-gray-800">{title}</span>
+                      <button type="button" onClick={() => removeLinkedEvent(title)} className="text-red-500 hover:text-red-700 p-1">
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400 italic">No events linked yet.</p>
+              )}
+            </div>
           </div>
         </div>
 

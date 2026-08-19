@@ -3,7 +3,7 @@ import { X, CheckCircle, UserX, Loader2 } from 'lucide-react';
 import { getProblemStatementName } from '../../../utils/mappingUtils';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-export default function AssessmentModal({ isOpen, onClose, team, currentIndex, totalTeams, onNext, onPrev, eventCriteria, currentUserId, isLocked, onSubmit, onMarkAbsent }) {
+export default function AssessmentModal({ isOpen, onClose, team, currentIndex, totalTeams, onNext, onPrev, eventCriteria, currentUserId, currentEventId, isLocked, onSubmit, onMarkAbsent }) {
   const [criteria, setCriteria] = useState([]);
   const [feedback, setFeedback] = useState('');
   const [mode, setMode] = useState('criteria'); // 'criteria' or 'absent'
@@ -11,7 +11,8 @@ export default function AssessmentModal({ isOpen, onClose, team, currentIndex, t
 
   useEffect(() => {
     if (isOpen && team) {
-      const existing = team.assessments?.find(a => a.evaluatorId === currentUserId);
+      const eventObj = team.assessments?.find(a => a.eventId === currentEventId);
+      const existing = eventObj?.evaluatorScores?.find(a => a.evaluatorId === currentUserId);
       if (existing) {
         setMode(existing.mode || 'criteria');
         setFeedback(existing.feedback || '');

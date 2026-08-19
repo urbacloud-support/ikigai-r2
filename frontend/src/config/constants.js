@@ -9,7 +9,4 @@ export const ASSESSMENT_CRITERIA = [
 export const ROLE_LABELS = {
   admin: "Admin",
   evaluator: "Evaluator",
-  judge: "Judge",
-  studentCoordinator: "Student Coordinator",
-  teamLeader: "Team Leader",
 };

@@ -90,63 +90,74 @@ export default function TeamDetailsModal({ isOpen, onClose, team }) {
                   No evaluators have assessed this team yet.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {team.assessments.map((assessment, idx) => (
-                    <div key={assessment._id || idx} className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between gap-4 transition hover:border-primary-200">
-                      <div>
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <p className="font-bold text-gray-900 text-base">{assessment.evaluatorName || 'Unknown Evaluator'}</p>
-                            <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mt-1">
-                              {assessment.role === 'judge' ? 'Judge' : 'Session Chair'}
-                            </p>
-                          </div>
-                          <div className="shrink-0 text-right">
-                            {assessment.mode === 'absent' ? (
-                              <div className="inline-flex items-center gap-1 px-2 py-1 bg-red-50 text-red-700 font-bold rounded-md text-xs">
-                                <UserX size={14} /> Absent
-                              </div>
-                            ) : (
-                              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 font-bold rounded-md text-sm">
-                                <CheckCircle size={16} /> {assessment.totalScore} <span className="text-[10px] font-semibold text-green-600/70 ml-0.5">pts</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        
-                        {assessment.feedback && (
-                          <div className="mt-4 bg-gray-50 p-3 rounded-lg text-sm text-gray-700 italic flex items-start gap-2 border border-gray-100">
-                            <MessageSquare size={16} className="text-gray-400 mt-0.5 shrink-0" />
-                            <span>"{assessment.feedback}"</span>
-                          </div>
-                        )}
-
-                        {assessment.criteria && assessment.criteria.length > 0 && (
-                          <div className="mt-4 pt-4 border-t border-gray-100">
-                            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Criteria Breakdown</p>
-                            <div className="flex flex-col gap-2">
-                              {assessment.criteria.map((c, i) => {
-                                // Support both old ikigai1 number array and new ikigai2 object array
-                                const isObject = typeof c === 'object' && c !== null;
-                                const name = isObject ? c.name : `Criteria ${i + 1}`;
-                                const score = isObject ? c.score : c;
-                                const inputType = isObject ? c.inputType : 'number';
-                                const maxMarks = isObject ? c.maxMarks : '-';
-                                
-                                return (
-                                  <div key={i} className="flex justify-between items-center bg-gray-50 px-3 py-2 rounded-lg border border-gray-100">
-                                    <span className="text-sm text-gray-700 font-medium truncate pr-2" title={name}>{name}</span>
-                                    <span className="text-sm font-bold text-gray-900 shrink-0">
-                                      {inputType === 'boolean' ? (score ? 'Yes' : 'No') : score} 
-                                      {inputType === 'number' && maxMarks !== '-' && <span className="text-xs text-gray-400 font-normal"> / {maxMarks}</span>}
-                                    </span>
+                <div className="flex flex-col gap-6">
+                  {team.assessments.map((eventObj, eIdx) => (
+                    <div key={eventObj.eventId || eIdx}>
+                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 px-1 border-b border-gray-100 pb-1">{eventObj.eventName || 'Unknown Event'}</h4>
+                      
+                      {(!eventObj.evaluatorScores || eventObj.evaluatorScores.length === 0) ? (
+                        <p className="text-sm text-gray-400 italic px-1">No assessments yet</p>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {eventObj.evaluatorScores.map((assessment, idx) => (
+                            <div key={assessment._id || idx} className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between gap-4 transition hover:border-primary-200">
+                              <div>
+                                <div className="flex justify-between items-start mb-2">
+                                  <div>
+                                    <p className="font-bold text-gray-900 text-base">{assessment.evaluatorName || 'Unknown Evaluator'}</p>
+                                    <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mt-1">
+                                      {assessment.role === 'judge' ? 'Judge' : 'Session Chair'}
+                                    </p>
                                   </div>
-                                );
-                              })}
+                                  <div className="shrink-0 text-right">
+                                    {assessment.mode === 'absent' ? (
+                                      <div className="inline-flex items-center gap-1 px-2 py-1 bg-red-50 text-red-700 font-bold rounded-md text-xs">
+                                        <UserX size={14} /> Absent
+                                      </div>
+                                    ) : (
+                                      <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 font-bold rounded-md text-sm">
+                                        <CheckCircle size={16} /> {assessment.totalScore} <span className="text-[10px] font-semibold text-green-600/70 ml-0.5">pts</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                
+                                {assessment.feedback && (
+                                  <div className="mt-4 bg-gray-50 p-3 rounded-lg text-sm text-gray-700 italic flex items-start gap-2 border border-gray-100">
+                                    <MessageSquare size={16} className="text-gray-400 mt-0.5 shrink-0" />
+                                    <span>"{assessment.feedback}"</span>
+                                  </div>
+                                )}
+
+                                {assessment.criteria && assessment.criteria.length > 0 && (
+                                  <div className="mt-4 pt-4 border-t border-gray-100">
+                                    <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Criteria Breakdown</p>
+                                    <div className="flex flex-col gap-2">
+                                      {assessment.criteria.map((c, i) => {
+                                        const isObject = typeof c === 'object' && c !== null;
+                                        const name = isObject ? c.name : `Criteria ${i + 1}`;
+                                        const score = isObject ? c.score : c;
+                                        const inputType = isObject ? c.inputType : 'number';
+                                        const maxMarks = isObject ? c.maxMarks : '-';
+                                        
+                                        return (
+                                          <div key={i} className="flex justify-between items-center bg-gray-50 px-3 py-2 rounded-lg border border-gray-100">
+                                            <span className="text-sm text-gray-700 font-medium truncate pr-2" title={name}>{name}</span>
+                                            <span className="text-sm font-bold text-gray-900 shrink-0">
+                                              {inputType === 'boolean' ? (score ? 'Yes' : 'No') : score} 
+                                              {inputType === 'number' && maxMarks !== '-' && <span className="text-xs text-gray-400 font-normal"> / {maxMarks}</span>}
+                                            </span>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        )}
-                      </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

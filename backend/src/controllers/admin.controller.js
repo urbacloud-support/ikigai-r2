@@ -16,7 +16,7 @@ export const getEvents = async (req, res) => {
 };
 
 export const createEvent = async (req, res) => {
-  const { title, description, date, location, trackIds } = req.body;
+  const { title, description, date, location, trackIds, linkedPastEvents } = req.body;
   try {
     let query = {};
     if (trackIds && trackIds.length > 0) {
@@ -31,7 +31,7 @@ export const createEvent = async (req, res) => {
       description: t.description
     }));
 
-    const event = new Event({ title, description, date, location, selectedTracks });
+    const event = new Event({ title, description, date, location, selectedTracks, linkedPastEvents: linkedPastEvents || [] });
     const createdEvent = await event.save();
     res.status(201).json(createdEvent);
   } catch (error) {
@@ -40,7 +40,7 @@ export const createEvent = async (req, res) => {
 };
 
 export const updateEvent = async (req, res) => {
-  const { title, description, date } = req.body;
+  const { title, description, date, linkedPastEvents } = req.body;
   try {
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Event not found' });
@@ -48,6 +48,7 @@ export const updateEvent = async (req, res) => {
     if (title) event.title = title;
     if (description !== undefined) event.description = description;
     if (date) event.date = date;
+    if (linkedPastEvents !== undefined) event.linkedPastEvents = linkedPastEvents;
     
     const updatedEvent = await event.save();
     res.json(updatedEvent);

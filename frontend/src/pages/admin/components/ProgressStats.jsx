@@ -1,11 +1,14 @@
 import React from 'react';
 import { Target, CheckCircle, Clock } from 'lucide-react';
 
-export default function ProgressStats({ teams, currentEvaluatorId }) {
+export default function ProgressStats({ teams, currentEvaluatorId, currentEventId }) {
   if (!teams || teams.length === 0) return null;
 
   const total = teams.length;
-  const evaluatedCount = teams.filter(t => t.assessments?.some(a => a.evaluatorId === currentEvaluatorId)).length;
+  const evaluatedCount = teams.filter(t => {
+    const eventObj = t.assessments?.find(a => a.eventId === currentEventId);
+    return eventObj?.evaluatorScores?.some(s => s.evaluatorId === currentEvaluatorId);
+  }).length;
   const pendingCount = total - evaluatedCount;
   
   const percentage = total > 0 ? Math.round((evaluatedCount / total) * 100) : 0;

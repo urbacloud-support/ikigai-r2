@@ -3,7 +3,7 @@ import { Users as TeamIcon, CheckCircle, Clock, UserX } from 'lucide-react';
 import { getProblemStatementName } from '../../../utils/mappingUtils';
 import TeamDetailsModal from './TeamDetailsModal';
 
-export default function TeamGrid({ teams, currentEvaluatorId }) {
+export default function TeamGrid({ teams, currentEvaluatorId, currentEventId }) {
   const [selectedTeam, setSelectedTeam] = useState(null);
   if (!teams || teams.length === 0) {
     return (
@@ -17,7 +17,8 @@ export default function TeamGrid({ teams, currentEvaluatorId }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {teams.map(team => {
-        const assessment = team.assessments?.find(a => a.evaluatorId === currentEvaluatorId);
+        const eventObj = team.assessments?.find(a => a.eventId === currentEventId);
+        const assessment = eventObj?.evaluatorScores?.find(a => a.evaluatorId === currentEvaluatorId);
         const isAssessed = !!assessment;
         const isAbsent = assessment?.mode === 'absent';
 

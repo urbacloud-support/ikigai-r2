@@ -1,17 +1,19 @@
 import React from 'react';
 import { X, Trophy } from 'lucide-react';
 
-export default function AssessmentSummary({ isOpen, onClose, teams, criteria, currentUserId }) {
+export default function AssessmentSummary({ isOpen, onClose, teams, criteria, currentUserId, currentEventId }) {
   if (!isOpen) return null;
 
   // Filter out teams that haven't been assessed by THIS evaluator
-  const assessedTeams = teams.filter(t => 
-    t.assessments && t.assessments.some(a => a.evaluatorId === currentUserId)
-  );
+  const assessedTeams = teams.filter(t => {
+    const eventObj = t.assessments?.find(a => a.eventId === currentEventId);
+    return eventObj?.evaluatorScores?.some(a => a.evaluatorId === currentUserId);
+  });
 
   // Map to a more usable format for sorting and rendering
   const mappedTeams = assessedTeams.map(team => {
-    const assessment = team.assessments.find(a => a.evaluatorId === currentUserId);
+    const eventObj = team.assessments.find(a => a.eventId === currentEventId);
+    const assessment = eventObj.evaluatorScores.find(a => a.evaluatorId === currentUserId);
     return {
       _id: team._id,
       teamName: team.teamName || 'Unnamed',

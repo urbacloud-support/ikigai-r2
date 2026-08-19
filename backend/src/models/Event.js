@@ -19,7 +19,8 @@ const eventSchema = new mongoose.Schema({
   date: { type: Date, required: true },
   location: { type: String },
   selectedTracks: [embeddedTrackSchema],
-  criteria: { type: [criteriaSchema], default: [] }
+  criteria: { type: [criteriaSchema], default: [] },
+  linkedPastEvents: { type: [String], default: [] }
 }, { timestamps: true });
 
 export default mongoose.model('Event', eventSchema, 'events');

@@ -137,7 +137,8 @@ export default function ProgressView() {
     
     teams.forEach(t => {
       // Find assessment for selected evaluator
-      const a = t.assessments?.find(ass => ass.evaluatorId === selectedEvaluatorId);
+      const eventObj = t.assessments?.find(ass => ass.eventId === selectedEventId);
+      const a = eventObj?.evaluatorScores?.find(s => s.evaluatorId === selectedEvaluatorId);
       const score = a ? a.totalScore : 'Pending';
       csvContent += `${t._id},"${t.teamName || 'Unnamed'}","${t.assignedProblemStatement || ''}",${score}\n`;
     });
@@ -234,10 +235,10 @@ export default function ProgressView() {
           {selectedEvaluatorId ? (
             <div className="animate-in fade-in duration-300">
               
-              <ProgressStats teams={teams} currentEvaluatorId={selectedEvaluatorId} />
+              <ProgressStats teams={teams} currentEvaluatorId={selectedEvaluatorId} currentEventId={selectedEventId} />
               
               <div className="bg-gray-50/50 rounded-2xl p-1">
-                <TeamGrid teams={teams} currentEvaluatorId={selectedEvaluatorId} />
+                <TeamGrid teams={teams} currentEvaluatorId={selectedEvaluatorId} currentEventId={selectedEventId} />
               </div>
 
             </div>

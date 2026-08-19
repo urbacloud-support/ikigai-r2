@@ -10,6 +10,12 @@ const assessmentSchema = new mongoose.Schema({
   feedback: { type: String }
 }, { timestamps: true });
 
+const eventAssessmentSchema = new mongoose.Schema({
+  eventId: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
+  eventName: { type: String, required: true },
+  evaluatorScores: [assessmentSchema]
+}, { _id: false });
+
 const memberSchema = new mongoose.Schema({
   name: String,
   email: String,
@@ -52,7 +58,7 @@ const teamSchema = new mongoose.Schema({
     problemStatement: String
   },
   status: { type: String, default: 'Pending' },
-  assessments: [assessmentSchema]
+  assessments: [eventAssessmentSchema]
 }, { timestamps: true });
 
 export default mongoose.model('Team', teamSchema, 'teams');

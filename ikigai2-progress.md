@@ -1,5 +1,8 @@
 # Ikigai2 — Progress Log
 
+frontend deployed URL: https://acrocsit.in
+backend deployed URL: https://ikigai2-backend.up.railway.app
+
 *Project hard-reset on 2026-08-11 to align natively with the ikigai2 database.*
 
 ## Completed Tasks

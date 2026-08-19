@@ -2,8 +2,9 @@ import React from 'react';
 import { Users, CheckCircle, Clock } from 'lucide-react';
 import { getProblemStatementName } from '../../../utils/mappingUtils';
 
-export default function TrackCard({ team, currentUserId, onClick }) {
-  const assessment = team.assessments?.find(a => a.evaluatorId === currentUserId);
+export default function TrackCard({ team, currentUserId, currentEventId, onClick }) {
+  const eventObj = team.assessments?.find(a => a.eventId === currentEventId);
+  const assessment = eventObj?.evaluatorScores?.find(a => a.evaluatorId === currentUserId);
   const isAssessed = !!assessment;
 
   return (

@@ -43,7 +43,23 @@ export const submitAssessment = async (req, res) => {
     const team = await Team.findById(req.params.id);
     if (!team) return res.status(404).json({ message: 'Team not found' });
 
-    const existingIndex = team.assessments.findIndex(
+    if (!user.assignedEventId) {
+      return res.status(400).json({ message: 'Evaluator is not assigned to an event' });
+    }
+    const event = await Event.findById(user.assignedEventId);
+    if (!event) return res.status(400).json({ message: 'Assigned event not found' });
+
+    let eventObjIndex = team.assessments.findIndex(a => a.eventId.toString() === user.assignedEventId.toString());
+    if (eventObjIndex === -1) {
+      team.assessments.push({
+        eventId: user.assignedEventId,
+        eventName: event.title,
+        evaluatorScores: []
+      });
+      eventObjIndex = team.assessments.length - 1;
+    }
+
+    const existingIndex = team.assessments[eventObjIndex].evaluatorScores.findIndex(
       a => a.evaluatorId.toString() === req.user._id.toString()
     );
 
@@ -58,9 +74,9 @@ export const submitAssessment = async (req, res) => {
     };
 
     if (existingIndex !== -1) {
-      team.assessments[existingIndex] = assessmentData;
+      team.assessments[eventObjIndex].evaluatorScores[existingIndex] = assessmentData;
     } else {
-      team.assessments.push(assessmentData);
+      team.assessments[eventObjIndex].evaluatorScores.push(assessmentData);
     }
 
     await team.save();
@@ -86,7 +102,23 @@ export const markAbsent = async (req, res) => {
     const team = await Team.findById(req.params.id);
     if (!team) return res.status(404).json({ message: 'Team not found' });
 
-    const existingIndex = team.assessments.findIndex(
+    if (!user.assignedEventId) {
+      return res.status(400).json({ message: 'Evaluator is not assigned to an event' });
+    }
+    const event = await Event.findById(user.assignedEventId);
+    if (!event) return res.status(400).json({ message: 'Assigned event not found' });
+
+    let eventObjIndex = team.assessments.findIndex(a => a.eventId.toString() === user.assignedEventId.toString());
+    if (eventObjIndex === -1) {
+      team.assessments.push({
+        eventId: user.assignedEventId,
+        eventName: event.title,
+        evaluatorScores: []
+      });
+      eventObjIndex = team.assessments.length - 1;
+    }
+
+    const existingIndex = team.assessments[eventObjIndex].evaluatorScores.findIndex(
       a => a.evaluatorId.toString() === req.user._id.toString()
     );
 
@@ -100,9 +132,9 @@ export const markAbsent = async (req, res) => {
     };
 
     if (existingIndex !== -1) {
-      team.assessments[existingIndex] = assessmentData;
+      team.assessments[eventObjIndex].evaluatorScores[existingIndex] = assessmentData;
     } else {
-      team.assessments.push(assessmentData);
+      team.assessments[eventObjIndex].evaluatorScores.push(assessmentData);
     }
 
     await team.save();

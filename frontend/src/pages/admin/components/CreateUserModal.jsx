@@ -122,7 +122,6 @@ export default function CreateUserModal({ isOpen, onClose, onCreated }) {
                 >
                   <option value="evaluator">Evaluator</option>
                   <option value="admin">Admin</option>
-                  <option value="studentCoordinator">Student Coordinator</option>
                 </select>
               </div>
             </div>

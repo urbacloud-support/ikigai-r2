@@ -244,6 +244,7 @@ export default function EvaluatorConsole() {
                 key={team._id} 
                 team={team} 
                 currentUserId={session.user._id} 
+                currentEventId={session.event?._id}
                 onClick={openAssessment}
               />
             ))}
@@ -274,6 +275,7 @@ export default function EvaluatorConsole() {
         onPrev={handlePrevTeam}
         eventCriteria={eventCriteria}
         currentUserId={session.user?._id}
+        currentEventId={session.event?._id}
         isLocked={session.user?.isLocked}
         onSubmit={handleAssessmentSubmit}
         onMarkAbsent={handleMarkAbsent}
@@ -285,6 +287,7 @@ export default function EvaluatorConsole() {
         teams={trackTeams}
         criteria={eventCriteria}
         currentUserId={session.user?._id}
+        currentEventId={session.event?._id}
       />
     </div>
   );
