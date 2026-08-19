@@ -6,7 +6,7 @@ import { API_BASE } from '../../config/api';
 import { getProblemStatementName } from '../../utils/mappingUtils';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 import EvaluatorSidebar from './components/EvaluatorSidebar';
 import ProgressStats from './components/ProgressStats';
@@ -201,7 +201,7 @@ export default function ProgressView() {
     const tableColumn = Object.keys(data[0]);
     const tableRows = data.map(row => Object.values(row));
 
-    doc.autoTable({
+    autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
       startY: 20,
