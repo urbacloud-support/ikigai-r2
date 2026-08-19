@@ -154,3 +154,9 @@
   - Added `AssessmentSummary.jsx` component and a fixed, floating "View Summary" button in `EvaluatorConsole.jsx` so evaluators can easily review all teams they've scored.
   - Fixed a React child rendering error in `AssessmentSummary` by ensuring criteria objects are parsed down to primitive score values, appropriately formatting booleans as Yes/No.
 - **Dummy Data**: Created `temp/seed_dummy_teams.js` to seed 15 dummy teams (3 per track) with distinct `[DUMMY]` naming for testing the Progress and Evaluator Console views.
+
+### Pending: Native Assessment Schema Refactor (Super-Phases)
+- **Super-Phase 1: Teams Schema Change.** Upgrading `assessments` array to a nested hierarchy: `Team -> events array -> evaluator scores`. 
+- **Context:** Round 2 consists of 3 sessions: Mentor Session 1, Mentor Session 2, and Judge Session. M1 assigns tasks/rates progress. M2 checks M1's progress, overall progress, and assigns tasks. Judge checks both sessions' progress. Each session is represented as a separate Event in the DB, and each Event has exactly one Evaluator. The `assessments` array in the `Team` document will be updated to store assessments grouped by `eventId`.
+- **Super-Phase 2: Admin Linking Events.** Linking the 3 session events together to track progression across sessions.
+- **Super-Phase 3: Evaluator History.** Evaluator UI updates to allow viewing previous session history (e.g., viewing M1 data during M2, viewing M1 and M2 during Judge session).
