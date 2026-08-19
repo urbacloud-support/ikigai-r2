@@ -6,13 +6,13 @@ export default function TeamSelectionModal({ isOpen, onClose, allTeams, selected
   const [localSelected, setLocalSelected] = useState(new Set(selectedTeams));
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Group teams by track
+  // Group teams by trackCode
   const groupedTeams = useMemo(() => {
     const groups = {};
     allTeams.forEach(team => {
-      const trackName = getTrackName(team.assignedTrack);
-      if (!groups[trackName]) groups[trackName] = [];
-      groups[trackName].push(team);
+      const trackCode = team.assignedTrack;
+      if (!groups[trackCode]) groups[trackCode] = [];
+      groups[trackCode].push(team);
     });
     return groups;
   }, [allTeams]);
@@ -72,14 +72,17 @@ export default function TeamSelectionModal({ isOpen, onClose, allTeams, selected
         </div>
 
         <div className="overflow-y-auto flex-1 p-6 space-y-8 bg-gray-50/30">
-          {Object.entries(groupedTeams).map(([trackName, teams]) => {
+          {Object.entries(groupedTeams)
+            .sort(([codeA], [codeB]) => codeA.localeCompare(codeB))
+            .map(([trackCode, teams]) => {
+            const trackName = getTrackName(trackCode);
             const filteredTeams = teams.filter(t => t.teamName.toLowerCase().includes(searchTerm.toLowerCase()));
             if (filteredTeams.length === 0) return null;
             
             const allSelected = filteredTeams.every(t => localSelected.has(t._id));
 
             return (
-              <div key={trackName} className="space-y-4">
+              <div key={trackCode} className="space-y-4">
                 <div className="flex items-center justify-between border-b border-gray-200 pb-2">
                   <h4 className="font-bold text-gray-800">{trackName}</h4>
                   <button 

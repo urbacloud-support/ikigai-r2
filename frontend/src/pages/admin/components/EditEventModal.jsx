@@ -80,7 +80,7 @@ export default function EditEventModal({ isOpen, onClose, event, allEvents = [],
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
           <h3 className="text-xl font-bold text-gray-900">Edit Event</h3>
           <button onClick={onClose} className="btn btn-icon">
@@ -95,105 +95,109 @@ export default function EditEventModal({ isOpen, onClose, event, allEvents = [],
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Event Title</label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) => setFormData({...formData, title: e.target.value})}
-              className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Event Title</label>
               <input
-                type="date"
-                value={formData.date}
-                onChange={(e) => setFormData({...formData, date: e.target.value})}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                type="text"
+                value={formData.title}
+                onChange={(e) => setFormData({...formData, title: e.target.value})}
+                className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} />
+                <input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({...formData, date: e.target.value})}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                />
+              </div>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                rows={2}
+                className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 resize-none"
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
-              rows={3}
-              className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 resize-none"
-            />
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 border-t border-gray-100 pt-4">
+            {/* Linked Past Events */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Linked Past Events</label>
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 h-full flex flex-col">
+                <select 
+                  onChange={addLinkedEvent}
+                  defaultValue=""
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 mb-3 bg-white"
+                >
+                  <option value="" disabled>Select an event to link...</option>
+                  {allEvents
+                    .filter(ev => ev._id !== event?._id && !formData.linkedPastEvents.includes(ev.title))
+                    .map(ev => (
+                      <option key={ev._id} value={ev.title}>{ev.title}</option>
+                    ))
+                  }
+                </select>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Linked Past Events</label>
-            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-              <select 
-                onChange={addLinkedEvent}
-                defaultValue=""
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 mb-3 bg-white"
-              >
-                <option value="" disabled>Select an event to link...</option>
-                {allEvents
-                  .filter(ev => ev._id !== event?._id && !formData.linkedPastEvents.includes(ev.title))
-                  .map(ev => (
-                    <option key={ev._id} value={ev.title}>{ev.title}</option>
-                  ))
-                }
-              </select>
-
-              {formData.linkedPastEvents.length > 0 ? (
-                <div className="flex flex-col gap-2">
-                  {formData.linkedPastEvents.map((title, idx) => (
-                    <div key={idx} className="flex justify-between items-center bg-white border border-gray-200 p-2.5 rounded-lg shadow-sm">
-                      <span className="text-sm font-medium text-gray-800">{title}</span>
-                      <button type="button" onClick={() => removeLinkedEvent(title)} className="text-red-500 hover:text-red-700 p-1">
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-gray-400 italic">No events linked yet.</p>
-              )}
-            </div>
-          </div>
-
-          <div className="border-t border-gray-100 pt-6 mt-4">
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Specific Teams (Final Session UI)</label>
-                <p className="text-xs text-gray-500 mt-1">Select specific teams for Judges to evaluate in this event.</p>
+                {formData.linkedPastEvents.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    {formData.linkedPastEvents.map((title, idx) => (
+                      <div key={idx} className="flex justify-between items-center bg-white border border-gray-200 p-2.5 rounded-lg shadow-sm">
+                        <span className="text-sm font-medium text-gray-800">{title}</span>
+                        <button type="button" onClick={() => removeLinkedEvent(title)} className="text-red-500 hover:text-red-700 p-1">
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400 italic">No events linked yet.</p>
+                )}
               </div>
-              <button 
-                type="button" 
-                onClick={() => setShowTeamModal(true)}
-                className="btn btn-secondary btn-sm bg-white border-gray-200"
-              >
-                <Users size={14} />
-                Manage Teams ({formData.selectedTeams.length})
-              </button>
             </div>
-            
-            {formData.selectedTeams.length > 0 && (
-              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mt-3 flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-                {formData.selectedTeams.map(tid => {
-                  const team = allTeams.find(t => t._id === tid);
-                  if (!team) return null;
-                  return (
-                    <div key={tid} className="bg-white border border-gray-200 text-xs font-semibold px-2 py-1 rounded-md flex items-center gap-1.5 shadow-sm">
-                      {team.teamName}
-                      <button type="button" onClick={() => setFormData(p => ({...p, selectedTeams: p.selectedTeams.filter(id => id !== tid)}))} className="text-red-500 hover:text-red-700 ml-1">
-                        <X size={12} />
-                      </button>
-                    </div>
-                  );
-                })}
+
+            {/* Specific Teams */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Specific Teams (Final Session)</label>
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 h-full flex flex-col">
+                <p className="text-xs text-gray-500 mb-3">Select specific teams for Judges to evaluate in this event.</p>
+                <button 
+                  type="button" 
+                  onClick={() => setShowTeamModal(true)}
+                  className="btn btn-secondary w-full bg-white border-gray-200 flex items-center justify-center gap-2 mb-3"
+                >
+                  <Users size={16} />
+                  Manage Teams ({formData.selectedTeams.length})
+                </button>
+                
+                {formData.selectedTeams.length > 0 && (
+                  <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto mt-auto pt-2">
+                    {formData.selectedTeams.map(tid => {
+                      const team = allTeams.find(t => t._id === tid);
+                      if (!team) return null;
+                      return (
+                        <div key={tid} className="bg-white border border-gray-200 text-xs font-semibold px-2 py-1.5 rounded-md flex items-center gap-1.5 shadow-sm">
+                          {team.teamName}
+                          <button type="button" onClick={() => setFormData(p => ({...p, selectedTeams: p.selectedTeams.filter(id => id !== tid)}))} className="text-red-500 hover:text-red-700 ml-1">
+                            <X size={12} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
 

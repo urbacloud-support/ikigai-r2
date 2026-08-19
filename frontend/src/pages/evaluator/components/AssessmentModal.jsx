@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, CheckCircle, UserX, Loader2 } from 'lucide-react';
+import { X, CheckCircle, UserX, Loader2, MousePointerClick } from 'lucide-react';
 import { getProblemStatementName } from '../../../utils/mappingUtils';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -75,40 +75,40 @@ export default function AssessmentModal({ isOpen, onClose, team, currentIndex, t
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+      
+      {/* Desktop Left Click Area */}
+      {currentIndex !== undefined && currentIndex > 0 && (
+        <button 
+          onClick={onPrev}
+          className="hidden md:flex absolute left-0 top-0 bottom-0 w-[calc(50%-22rem)] flex-col items-center justify-center text-white/50 hover:text-white hover:bg-white/5 transition-all cursor-pointer z-40 group"
+        >
+          <span className="text-xl font-bold mb-3">&larr; Previous team</span>
+          <MousePointerClick size={32} className="opacity-50 group-hover:opacity-100 transition-opacity" />
+        </button>
+      )}
+
+      {/* Desktop Right Click Area */}
+      {currentIndex !== undefined && totalTeams !== undefined && currentIndex < totalTeams - 1 && (
+        <button 
+          onClick={onNext}
+          className="hidden md:flex absolute right-0 top-0 bottom-0 w-[calc(50%-22rem)] flex-col items-center justify-center text-white/50 hover:text-white hover:bg-white/5 transition-all cursor-pointer z-40 group"
+        >
+          <span className="text-xl font-bold mb-3">Next team &rarr;</span>
+          <MousePointerClick size={32} className="opacity-50 group-hover:opacity-100 transition-opacity" />
+        </button>
+      )}
+
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] relative z-50">
         
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10">
+        <div className="p-6 border-b border-gray-100 flex justify-between items-start bg-white sticky top-0 z-10 gap-4">
           <div>
             <h3 className="text-xl font-bold text-gray-900">Evaluate: {team.teamName || 'Unnamed'}</h3>
             <p className="text-sm text-gray-500 mt-1">Problem Statement: {getProblemStatementName(team.assignedProblemStatement, true)}</p>
           </div>
-          <div className="flex items-center gap-3">
-            {currentIndex !== undefined && totalTeams !== undefined && (
-              <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-lg border border-gray-200 mr-2">
-                <button 
-                  onClick={onPrev} 
-                  disabled={currentIndex === 0}
-                  className="p-1.5 text-gray-600 hover:bg-white rounded-md disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronLeft size={18} />
-                </button>
-                <span className="text-sm font-medium text-gray-600 px-2">
-                  {currentIndex + 1} of {totalTeams}
-                </span>
-                <button 
-                  onClick={onNext} 
-                  disabled={currentIndex === totalTeams - 1}
-                  className="p-1.5 text-gray-600 hover:bg-white rounded-md disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronRight size={18} />
-                </button>
-              </div>
-            )}
-            <button onClick={onClose} className="btn btn-icon">
-              <X size={20} />
-            </button>
-          </div>
+          <button onClick={onClose} className="btn btn-icon shrink-0 mt-1">
+            <X size={20} />
+          </button>
         </div>
 
         <div className="p-6 overflow-y-auto flex-1 bg-gray-50/50">
@@ -123,23 +123,7 @@ export default function AssessmentModal({ isOpen, onClose, team, currentIndex, t
             </div>
           )}
 
-          <div className="flex gap-2 mb-6">
-            <button 
-              type="button"
-              onClick={() => setMode('criteria')}
-              className={`btn flex-1 ${mode === 'criteria' ? 'btn-primary' : 'btn-secondary'}`}
-            >
-              Criteria Scoring
-            </button>
-            <button 
-              type="button"
-              onClick={handleAbsent}
-              disabled={isLocked || loading}
-              className={`btn ${mode === 'absent' ? 'btn-danger-solid' : 'btn-danger'}`}
-            >
-              Mark Absent
-            </button>
-          </div>
+
 
           {linkedPastEvents.length > 0 && team.assessments && (
             <div className="mb-6 bg-blue-50/50 p-4 rounded-xl border border-blue-100 shadow-sm">
@@ -180,7 +164,9 @@ export default function AssessmentModal({ isOpen, onClose, team, currentIndex, t
                 <div key={index} className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
                   <div className="flex justify-between items-center mb-3">
                     <label className="font-semibold text-gray-800">{c.name}</label>
-                    <span className="text-sm text-gray-500 font-medium">Max: {c.maxMarks}</span>
+                    {c.inputType !== 'text' && (
+                      <span className="text-sm text-gray-500 font-medium">Max: {c.maxMarks}</span>
+                    )}
                   </div>
                   
                   {c.inputType === 'number' && (
@@ -235,25 +221,57 @@ export default function AssessmentModal({ isOpen, onClose, team, currentIndex, t
           </form>
         </div>
 
-        <div className="p-4 bg-white flex justify-between items-center border-t border-gray-100">
-          <div className="text-lg">
-            <span className="text-gray-500 font-medium">Total Score: </span>
-            <span className="font-bold text-gray-900">{mode === 'absent' ? 0 : calculateTotal()}</span>
-            <span className="text-gray-400 text-sm"> / {maxTotal}</span>
-          </div>
-          
-          <div className="flex gap-3">
-            <button type="button" onClick={onClose} className="btn btn-secondary">
-              Cancel
-            </button>
-            <button 
-              type="submit" form="eval-form"
-              disabled={isLocked || loading || mode === 'absent'}
-              className="btn btn-primary"
-            >
-              {loading && <Loader2 size={16} className="animate-spin" />}
-              Save Assessment
-            </button>
+        <div className="p-4 bg-white border-t border-gray-100">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="flex items-center justify-between w-full sm:w-auto gap-4">
+              <div className="bg-primary-50 text-primary-900 border border-primary-200 px-4 py-2 rounded-xl flex items-center gap-2 shadow-sm">
+                {maxTotal > 0 ? (
+                  <>
+                    <span className="text-primary-700 font-bold text-sm uppercase tracking-wide">Total Score:</span>
+                    <span className="font-bold text-2xl leading-none">{mode === 'absent' ? 0 : calculateTotal()}</span>
+                    <span className="text-primary-600/70 text-sm whitespace-nowrap mt-1">/ {maxTotal}</span>
+                  </>
+                ) : (
+                  <span className="text-primary-700 font-medium italic">Qualitative Assessment</span>
+                )}
+              </div>
+              
+              {currentIndex !== undefined && totalTeams !== undefined && (
+                <div className="md:hidden flex items-center gap-1 bg-gray-50 p-1 rounded-lg border border-gray-200 shrink-0">
+                  <button 
+                    onClick={onPrev} 
+                    disabled={currentIndex === 0}
+                    className="p-1.5 text-gray-600 hover:bg-white rounded-md disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <span className="text-sm font-medium text-gray-600 px-2 whitespace-nowrap">
+                    {currentIndex + 1} of {totalTeams}
+                  </span>
+                  <button 
+                    onClick={onNext} 
+                    disabled={currentIndex === totalTeams - 1}
+                    className="p-1.5 text-gray-600 hover:bg-white rounded-md disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex gap-3 w-full sm:w-auto">
+              <button type="button" onClick={onClose} className="btn btn-secondary flex-1 sm:flex-none">
+                Cancel
+              </button>
+              <button 
+                type="submit" form="eval-form"
+                disabled={isLocked || loading || mode === 'absent'}
+                className="btn btn-primary flex-1 sm:flex-none flex justify-center items-center gap-2"
+              >
+                {loading && <Loader2 size={16} className="animate-spin" />}
+                Save Assessment
+              </button>
+            </div>
           </div>
         </div>
       </div>
