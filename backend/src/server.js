@@ -7,7 +7,6 @@ import { connectDB } from './config/db.js';
 import { rehydrateTimer } from './utils/timerService.js';
 
 // Route Imports
-// Route Imports
 import authRoutes from './routes/auth.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import evaluatorRoutes from './routes/evaluator.routes.js';
