@@ -17,24 +17,25 @@ dotenv.config();
 const app = express();
 const httpServer = createServer(app);
 
-// CORS Config — whitelist all known origins
+// CORS Config — dynamic whitelist
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
   'https://acrocsit.in',                        // R2 frontend
-  'https://ikigai-csit.up.railway.app',         // R1 frontend (team leaders poll timer from here)
-  'https://ikigai2-backend.up.railway.app',     // R2 backend (self, for health checks)
+  'https://ikigai-csit.up.railway.app',         // R1 frontend
+  'https://ikigai2-backend.up.railway.app'      // R2 backend
 ];
 
+const dynamicOrigin = function (origin, callback) {
+  if (!origin) return callback(null, true);
+  if (allowedOrigins.includes(origin) || origin.endsWith('.up.railway.app') || origin.endsWith('.vercel.app')) {
+    return callback(null, true);
+  }
+  callback(new Error('Not allowed by CORS'));
+};
+
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (e.g., curl, mobile apps, server-to-server)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin) || origin.endsWith('.up.railway.app') || origin.endsWith('.vercel.app')) {
-      return callback(null, true);
-    }
-    callback(new Error('Not allowed by CORS'));
-  },
+  origin: dynamicOrigin,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Timer-Key'],
   credentials: true
@@ -45,8 +46,9 @@ app.use(express.json({ limit: '25mb' }));
 // WebSocket setup
 const io = new SocketServer(httpServer, {
   cors: {
-    origin: allowedOrigins,
-    methods: ['GET', 'POST', 'PATCH']
+    origin: dynamicOrigin,
+    methods: ['GET', 'POST', 'PATCH'],
+    credentials: true
   }
 });
 app.set('io', io);
