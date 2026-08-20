@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import TimerWidget from '../../components/admin/TimerWidget.jsx';
 import { Link, useLocation, Outlet } from "react-router-dom";
 import { Menu, CalendarDays, TrendingUp, Users, FolderKanban } from "lucide-react";
 import Header from '../../components/shared/Header';
@@ -105,6 +106,9 @@ export default function AdminLayout() {
         </div>
 
       </div>
+
+      {/* Floating Timer Widget — visible on all admin pages */}
+      <TimerWidget />
     </div>
   );
 }

@@ -4,28 +4,50 @@ import cors from 'cors';
 import { createServer } from 'http';
 import { Server as SocketServer } from 'socket.io';
 import { connectDB } from './config/db.js';
+import { rehydrateTimer } from './utils/timerService.js';
 
 // Route Imports
 import authRoutes from './routes/auth.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import evaluatorRoutes from './routes/evaluator.routes.js';
+import timerRoutes from './routes/timer.routes.js';
 
 dotenv.config();
 
 const app = express();
 const httpServer = createServer(app);
 
-// CORS Config
+// CORS Config — whitelist all known origins
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://acrocsit.in',                        // R2 frontend
+  'https://ikigai-csit.up.railway.app',         // R1 frontend (team leaders poll timer from here)
+  'https://ikigai2-backend.up.railway.app',     // R2 backend (self, for health checks)
+];
+
 app.use(cors({
-  origin: '*', // Adjust in production
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
+  origin: function (origin, callback) {
+    // Allow requests with no origin (e.g., curl, mobile apps, server-to-server)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin) || origin.endsWith('.up.railway.app') || origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+    callback(new Error('Not allowed by CORS'));
+  },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Timer-Key'],
+  credentials: true
 }));
 
 app.use(express.json({ limit: '25mb' }));
 
-// Websocket setup
+// WebSocket setup
 const io = new SocketServer(httpServer, {
-  cors: { origin: '*', methods: ['GET', 'POST', 'PATCH'] }
+  cors: {
+    origin: allowedOrigins,
+    methods: ['GET', 'POST', 'PATCH']
+  }
 });
 app.set('io', io);
 
@@ -39,14 +61,18 @@ io.on('connection', (socket) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/evaluator', evaluatorRoutes);
+app.use('/api/timer', timerRoutes);  // Public timer read (API-key protected)
 
 // Health check
 app.get('/', (req, res) => res.send('Ikigai2 Backend Native API is running'));
 
 const PORT = process.env.PORT || 5000;
 
-connectDB().then(() => {
-  httpServer.listen(PORT, () => {
-    console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+connectDB().then(async () => {
+  // Rehydrate timer from DB after DB connection is ready
+  await rehydrateTimer();
+
+  httpServer.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT}`);
   });
 });

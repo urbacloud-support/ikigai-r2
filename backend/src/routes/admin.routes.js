@@ -16,6 +16,7 @@ import {
   getTeams,
   getGlobalTracks 
 } from '../controllers/admin.controller.js';
+import { startTimer, stopTimer, resetTimer, getTimerStatus } from '../controllers/timer.controller.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -52,5 +53,11 @@ router.get('/teams', getTeams);
 
 // --- Tracks ---
 router.get('/tracks', getGlobalTracks);
+
+// --- Hackathon Timer (admin write endpoints) ---
+router.get('/timer/status', getTimerStatus);
+router.post('/timer/start', startTimer);
+router.post('/timer/stop', stopTimer);
+router.post('/timer/reset', resetTimer);
 
 export default router;
