@@ -2,15 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { X, CheckCircle, UserX, Loader2, MousePointerClick, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, User, Users, FileText, Mail, Building, MapPin } from 'lucide-react';
 import { getProblemStatementName, getTrackName } from '../../../utils/mappingUtils';
 
-export default function AssessmentModal({ isOpen, onClose, team, currentIndex, totalTeams, onNext, onPrev, eventCriteria, currentUserId, currentEventId, linkedPastEvents = [], isLocked, onSubmit, onMarkAbsent }) {
+export default function AssessmentModal({ isOpen, onClose, team, currentIndex, totalTeams, onNext, onPrev, eventCriteria, currentUserId, currentEventId, linkedPastEvents = [], isLocked, onSubmit, onMarkAbsent, isJudge }) {
   const [criteria, setCriteria] = useState([]);
   const [progress, setProgress] = useState('');
   const [mode, setMode] = useState('criteria'); // 'criteria' or 'absent'
   const [loading, setLoading] = useState(false);
-  const [openSection, setOpenSection] = useState('details');
+  const [openSection, setOpenSection] = useState('');
 
   useEffect(() => {
-    setOpenSection('details');
+    setOpenSection('');
   }, [team]);
 
   useEffect(() => {
@@ -202,6 +202,69 @@ export default function AssessmentModal({ isOpen, onClose, team, currentIndex, t
             </div>
           </div>
 
+          {/* Past Session History Collapsible */}
+          {linkedPastEvents.length > 0 && team.assessments && (
+            <div className="mb-4 bg-white rounded-xl border border-blue-100 shadow-sm overflow-hidden">
+              <button 
+                type="button"
+                onClick={() => setOpenSection(openSection === 'history' ? '' : 'history')}
+                className="w-full flex items-center justify-between p-4 bg-blue-50 hover:bg-blue-100/50 transition-colors"
+              >
+                <h4 className="text-sm font-bold text-blue-900 flex items-center gap-2">
+                  <CheckCircle size={18} className="text-blue-500" /> Past Session History
+                </h4>
+                {openSection === 'history' ? <ChevronUp size={18} className="text-blue-500" /> : <ChevronDown size={18} className="text-blue-500" />}
+              </button>
+              
+              <div className={openSection === 'history' ? 'block' : 'hidden'}>
+                <div className="p-4 border-t border-blue-100 bg-blue-50/30">
+                  <div className="flex flex-col gap-3">
+                    {linkedPastEvents.map((eventName, idx) => {
+                      const pastEventObj = team.assessments.find(a => a.eventName === eventName);
+                      if (!pastEventObj || !pastEventObj.evaluatorScores || pastEventObj.evaluatorScores.length === 0) return null;
+                      
+                      return (
+                        <div key={idx} className="bg-white p-4 rounded-xl border border-blue-100 shadow-sm">
+                          <div className="text-xs font-bold text-blue-800 uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                            {eventName}
+                          </div>
+                          <div className="flex flex-col gap-3">
+                            {pastEventObj.evaluatorScores.map((score, sIdx) => (
+                              <div key={sIdx} className="bg-gray-50/80 border border-gray-100 p-3 rounded-xl shadow-sm">
+                                <div className="flex justify-between items-center mb-3">
+                                  <span className="text-sm font-semibold text-gray-800">{score.evaluatorName} ({score.role})</span>
+                                  {(!isJudge || !score.criteria || score.criteria.length === 0) && (
+                                    <span className="text-sm font-bold text-gray-900">{score.mode === 'absent' ? 'Absent' : `${score.totalScore} pts`}</span>
+                                  )}
+                                </div>
+                                
+                                {isJudge && score.criteria && score.criteria.length > 0 && (
+                                  <div className="bg-white border border-gray-200/80 rounded-lg shadow-sm mb-3 divide-y divide-gray-100">
+                                    {score.criteria.map((c, cIdx) => (
+                                      <div key={cIdx} className="flex flex-col px-3 py-2">
+                                        <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-0.5 leading-tight">{c.name}</span>
+                                        <span className="font-bold text-gray-900 text-sm">{c.inputType === 'boolean' ? (c.score ? 'Yes' : 'No') : c.score}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                
+                                {score.progress && (
+                                  <p className="text-xs text-gray-600 italic bg-white p-3 rounded-lg border border-gray-100">"{score.progress}"</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Evaluation Collapsible */}
           <div className="mb-6 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             <button 
@@ -217,41 +280,8 @@ export default function AssessmentModal({ isOpen, onClose, team, currentIndex, t
             
             <div className={openSection === 'evaluation' ? 'block' : 'hidden'}>
               <div className="p-4 border-t border-gray-100">
-                {linkedPastEvents.length > 0 && team.assessments && (
-            <div className="mb-6 bg-blue-50/50 p-4 rounded-xl border border-blue-100 shadow-sm">
-              <h4 className="text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
-                <CheckCircle size={16} className="text-blue-500" /> Past Session History
-              </h4>
-              <div className="flex flex-col gap-3">
-                {linkedPastEvents.map((eventName, idx) => {
-                  const pastEventObj = team.assessments.find(a => a.eventName === eventName);
-                  if (!pastEventObj || !pastEventObj.evaluatorScores || pastEventObj.evaluatorScores.length === 0) return null;
-                  
-                  // For evaluators, maybe we show all scores for that past event, or just their own?
-                  // Usually, history shows average or all evaluators. Let's just list the past evaluations.
-                  return (
-                    <div key={idx} className="bg-white p-3 rounded-lg border border-blue-100">
-                      <div className="text-xs font-bold text-blue-800 uppercase tracking-wider mb-2">{eventName}</div>
-                      {pastEventObj.evaluatorScores.map((score, sIdx) => (
-                        <div key={sIdx} className="mb-2 last:mb-0 pb-2 last:pb-0 border-b last:border-b-0 border-blue-50">
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="text-sm font-semibold text-gray-800">{score.evaluatorName} ({score.role})</span>
-                            <span className="text-sm font-bold text-gray-900">{score.mode === 'absent' ? 'Absent' : `${score.totalScore} pts`}</span>
-                          </div>
-                          {score.progress && (
-                            <p className="text-xs text-gray-600 italic bg-gray-50 p-2 rounded whitespace-pre-wrap break-words border border-gray-100">"{score.progress}"</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          <form id="eval-form" onSubmit={handleSubmit} className={mode === 'absent' ? 'opacity-50 pointer-events-none' : ''}>
-            <div className="space-y-5 mb-8">
+                <form id="eval-form" onSubmit={handleSubmit} className={mode === 'absent' ? 'opacity-50 pointer-events-none' : ''}>
+                  <div className="space-y-5 mb-8">
               {criteria.map((c, index) => (
                 <div key={index} className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
                   <div className="flex justify-between items-center mb-3">

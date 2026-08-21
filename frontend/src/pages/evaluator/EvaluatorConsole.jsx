@@ -306,6 +306,7 @@ export default function EvaluatorConsole() {
         onPrev={handlePrevTeam}
         eventCriteria={eventCriteria}
         currentUserId={session.user?._id}
+        isJudge={session.user?.isJudge}
         currentEventId={session.event?._id}
         linkedPastEvents={session.event?.linkedPastEvents || []}
         isLocked={session.user?.isLocked}
