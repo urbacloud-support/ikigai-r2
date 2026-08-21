@@ -141,9 +141,9 @@ export default function TeamDetailsModal({ isOpen, onClose, team }) {
                                         const maxMarks = isObject ? c.maxMarks : '-';
                                         
                                         return (
-                                          <div key={i} className="flex justify-between items-center bg-gray-50 px-3 py-2 rounded-lg border border-gray-100">
-                                            <span className="text-sm text-gray-700 font-medium truncate pr-2" title={name}>{name}</span>
-                                            <span className="text-sm font-bold text-gray-900 shrink-0">
+                                          <div key={i} className="flex justify-between items-start bg-gray-50 px-3 py-2 rounded-lg border border-gray-100 gap-4">
+                                            <span className="text-sm text-gray-700 font-medium shrink-0 pt-0.5" title={name}>{name}</span>
+                                            <span className="text-sm font-bold text-gray-900 text-right break-words overflow-hidden min-w-0">
                                               {inputType === 'boolean' ? (score ? 'Yes' : 'No') : score} 
                                               {inputType === 'number' && maxMarks !== '-' && <span className="text-xs text-gray-400 font-normal"> / {maxMarks}</span>}
                                             </span>

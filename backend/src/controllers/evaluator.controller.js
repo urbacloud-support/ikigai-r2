@@ -87,8 +87,12 @@ export const submitAssessment = async (req, res) => {
     const updateResult = await Team.updateOne(
       { 
         _id: teamId, 
-        "assessments.eventId": eventId,
-        "assessments.evaluatorScores.evaluatorId": req.user._id
+        assessments: {
+          $elemMatch: {
+            eventId: eventId,
+            "evaluatorScores.evaluatorId": req.user._id
+          }
+        }
       },
       {
         $set: setObj
@@ -163,8 +167,12 @@ export const markAbsent = async (req, res) => {
     const updateResult = await Team.updateOne(
       { 
         _id: teamId, 
-        "assessments.eventId": eventId,
-        "assessments.evaluatorScores.evaluatorId": req.user._id
+        assessments: {
+          $elemMatch: {
+            eventId: eventId,
+            "evaluatorScores.evaluatorId": req.user._id
+          }
+        }
       },
       {
         $set: setObj
