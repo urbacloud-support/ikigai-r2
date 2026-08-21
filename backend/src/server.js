@@ -4,11 +4,13 @@ import cors from 'cors';
 import { createServer } from 'http';
 import { Server as SocketServer } from 'socket.io';
 import { connectDB } from './config/db.js';
+import { rehydrateTimer } from './utils/timerService.js';
 
 // Route Imports
 import authRoutes from './routes/auth.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import evaluatorRoutes from './routes/evaluator.routes.js';
+import timerRoutes from './routes/timer.routes.js';
 
 dotenv.config();
 
@@ -39,14 +41,18 @@ io.on('connection', (socket) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/evaluator', evaluatorRoutes);
+app.use('/api/timer', timerRoutes);  // Public timer read (API-key protected)
 
 // Health check
 app.get('/', (req, res) => res.send('Ikigai2 Backend Native API is running'));
 
 const PORT = process.env.PORT || 5000;
 
-connectDB().then(() => {
-  httpServer.listen(PORT, () => {
-    console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+connectDB().then(async () => {
+  // Rehydrate timer from DB after DB connection is ready
+  await rehydrateTimer();
+
+  httpServer.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT}`);
   });
 });
