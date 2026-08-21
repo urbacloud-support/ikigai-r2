@@ -61,6 +61,19 @@ export const submitAssessment = async (req, res) => {
     if (!event) return res.status(400).json({ message: 'Assigned event not found' });
 
     const eventId = user.assignedEventId;
+
+    // Server-side validation (mirrors frontend rules)
+    if (mode !== 'absent') {
+      if (criteria && criteria.length > 0) {
+        const emptyText = criteria.find(c => c.inputType === 'text' && (!c.score || String(c.score).trim() === ''));
+        if (emptyText) {
+          return res.status(400).json({ message: `Criterion "${emptyText.name}" cannot be blank.` });
+        }
+      }
+      if (!progress || String(progress).trim() === '') {
+        return res.status(400).json({ message: 'Progress Notes cannot be empty.' });
+      }
+    }
     
     // Atomically ensure event object exists
     await Team.updateOne(

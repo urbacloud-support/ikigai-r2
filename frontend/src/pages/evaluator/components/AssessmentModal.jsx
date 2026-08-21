@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { X, CheckCircle, UserX, Loader2, MousePointerClick, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, User, Users, FileText, Mail, Building, MapPin } from 'lucide-react';
+import { X, CheckCircle, UserX, Loader2, MousePointerClick, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, User, Users, FileText, Mail, Building, MapPin, AlertCircle } from 'lucide-react';
 import { getProblemStatementName, getTrackName } from '../../../utils/mappingUtils';
 
 export default function AssessmentModal({ isOpen, onClose, team, currentIndex, totalTeams, onNext, onPrev, eventCriteria, currentUserId, currentEventId, linkedPastEvents = [], isLocked, onSubmit, onMarkAbsent, isJudge }) {
   const [criteria, setCriteria] = useState([]);
+  const [touchedBooleans, setTouchedBooleans] = useState({}); // tracks which boolean criteria were explicitly interacted with
   const [progress, setProgress] = useState('');
   const [mode, setMode] = useState('criteria'); // 'criteria' or 'absent'
   const [loading, setLoading] = useState(false);
   const [openSection, setOpenSection] = useState('');
+  const [validationError, setValidationError] = useState('');
 
   useEffect(() => {
     setOpenSection('');
-  }, [team]);
+    setValidationError('');
+    setTouchedBooleans({});
+  }, [team, isOpen]);
 
   useEffect(() => {
     if (isOpen && team) {
@@ -22,6 +26,12 @@ export default function AssessmentModal({ isOpen, onClose, team, currentIndex, t
         setProgress(existing.progress || '');
         if (existing.criteria && existing.criteria.length > 0) {
           setCriteria(existing.criteria);
+          // Pre-mark booleans from DB as touched — evaluator already saved them previously
+          const preTouched = {};
+          existing.criteria.forEach((c, idx) => {
+            if (c.inputType === 'boolean') preTouched[idx] = true;
+          });
+          setTouchedBooleans(preTouched);
         } else {
           initCriteria();
         }
@@ -41,6 +51,7 @@ export default function AssessmentModal({ isOpen, onClose, team, currentIndex, t
       score: c.inputType === 'boolean' ? false : (c.inputType === 'text' ? '' : 0)
     }));
     setCriteria(initial);
+    setTouchedBooleans({});
   };
 
   if (!isOpen || !team) return null;
@@ -49,6 +60,12 @@ export default function AssessmentModal({ isOpen, onClose, team, currentIndex, t
     const newCriteria = [...criteria];
     newCriteria[index].score = value;
     setCriteria(newCriteria);
+    setValidationError('');
+  };
+
+  const handleBooleanChange = (index, checked) => {
+    handleScoreChange(index, checked);
+    setTouchedBooleans(prev => ({ ...prev, [index]: true }));
   };
 
   const calculateTotal = () => {
@@ -64,28 +81,46 @@ export default function AssessmentModal({ isOpen, onClose, team, currentIndex, t
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isLocked) return;
-    
-    if (mode === 'criteria') {
-      const emptyCriterion = criteria.find(c => {
-        if (c.inputType === 'text') {
-          return !c.score || String(c.score).trim() === '';
-        }
-        if (c.inputType === 'number') {
-          return c.score === '' || c.score === null || c.score === undefined;
-        }
-        return false;
-      });
 
-      if (emptyCriterion) {
-        alert(`Please provide a value for "${emptyCriterion.name}". It cannot be left blank.`);
+    if (mode === 'criteria') {
+      // Validate text-type criteria are non-empty
+      const emptyTextCriterion = criteria.find(c =>
+        c.inputType === 'text' && (!c.score || String(c.score).trim() === '')
+      );
+      if (emptyTextCriterion) {
+        setValidationError(`"${emptyTextCriterion.name}" cannot be left blank. Please enter a value before saving.`);
+        setOpenSection('evaluation');
+        return;
+      }
+
+      // Validate boolean-type criteria were explicitly interacted with
+      const untouchedBoolean = criteria.find((c, idx) =>
+        c.inputType === 'boolean' && !touchedBooleans[idx]
+      );
+      if (untouchedBoolean) {
+        setValidationError(`Please explicitly check or uncheck "${untouchedBoolean.name}" before saving.`);
+        setOpenSection('evaluation');
+        return;
+      }
+
+      // Validate progress notes are non-empty
+      if (!progress || progress.trim() === '') {
+        setValidationError('Progress Notes cannot be empty. Please document the team\'s progress before saving.');
+        setOpenSection('evaluation');
         return;
       }
     }
 
+    setValidationError('');
     setLoading(true);
-    await onSubmit({ criteria, totalScore: calculateTotal(), mode, progress });
+    const serverError = await onSubmit({ criteria, totalScore: calculateTotal(), mode, progress });
     setLoading(false);
-    onClose();
+    if (serverError) {
+      setValidationError(serverError);
+      setOpenSection('evaluation');
+    } else {
+      onClose();
+    }
   };
 
   const handleAbsent = async () => {
@@ -132,6 +167,17 @@ export default function AssessmentModal({ isOpen, onClose, team, currentIndex, t
             <X size={20} />
           </button>
         </div>
+
+        {/* Validation Error Banner */}
+        {validationError && (
+          <div className="mx-6 mt-4 flex items-start gap-3 bg-red-50 border border-red-200 text-red-800 rounded-xl px-4 py-3 animate-in slide-in-from-top-2 duration-200">
+            <AlertCircle size={18} className="text-red-500 shrink-0 mt-0.5" />
+            <p className="text-sm font-medium leading-snug">{validationError}</p>
+            <button onClick={() => setValidationError('')} className="ml-auto text-red-400 hover:text-red-600 shrink-0">
+              <X size={16} />
+            </button>
+          </div>
+        )}
 
         <div className="p-6 overflow-y-auto flex-1 bg-gray-50/50">
           
@@ -347,15 +393,20 @@ export default function AssessmentModal({ isOpen, onClose, team, currentIndex, t
                   )}
 
                   {c.inputType === 'boolean' && (
-                    <label className="flex items-center gap-3 cursor-pointer">
+                    <label className={`flex items-center gap-3 cursor-pointer p-3 rounded-lg border transition-colors ${touchedBooleans[index] ? 'bg-primary-50 border-primary-200' : 'bg-amber-50 border-amber-200'}`}>
                       <input 
                         type="checkbox"
                         checked={!!c.score}
-                        onChange={(e) => handleScoreChange(index, e.target.checked)}
+                        onChange={(e) => handleBooleanChange(index, e.target.checked)}
                         className="w-5 h-5 text-primary-600 rounded"
                         disabled={isLocked}
                       />
-                      <span className="text-gray-700">Yes ({c.maxMarks} marks)</span>
+                      <div className="flex flex-col">
+                        <span className="text-gray-700">Yes ({c.maxMarks} marks)</span>
+                        {!touchedBooleans[index] && (
+                          <span className="text-xs text-amber-600 font-medium">Please check or uncheck to confirm</span>
+                        )}
+                      </div>
                     </label>
                   )}
 
@@ -372,15 +423,23 @@ export default function AssessmentModal({ isOpen, onClose, team, currentIndex, t
               ))}
             </div>
 
-            <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Progress Notes</label>
+            <div className={`bg-white p-5 rounded-xl border shadow-sm mb-4 ${!progress.trim() && mode !== 'absent' ? 'border-amber-200' : 'border-gray-100'}`}>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Progress Notes
+                <span className="text-red-500 ml-0.5">*</span>
+              </label>
               <textarea
                 disabled={isLocked || mode === 'absent'}
                 value={progress}
-                onChange={e => setProgress(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 disabled:bg-gray-50 resize-none text-sm"
-                rows="3" placeholder="Document the team's progress or task outcome..."
+                onChange={e => { setProgress(e.target.value); setValidationError(''); }}
+                className={`w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 disabled:bg-gray-50 resize-none text-sm transition-colors ${
+                  !progress.trim() && mode !== 'absent' ? 'border-amber-300 bg-amber-50/30' : 'border-gray-200'
+                }`}
+                rows="3" placeholder="Document the team's progress or task outcome... (required)"
               />
+              {!progress.trim() && mode !== 'absent' && (
+                <p className="text-xs text-amber-600 mt-1 font-medium">This field is required before saving.</p>
+              )}
             </div>
           </form>
         </div>

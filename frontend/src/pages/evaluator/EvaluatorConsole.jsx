@@ -110,9 +110,14 @@ export default function EvaluatorConsole() {
         } else {
           setIsModalOpen(false);
         }
+        return null; // no error
+      } else {
+        const errData = await res.json();
+        return errData.message || 'Failed to save assessment. Please try again.';
       }
     } catch (err) {
       console.error(err);
+      return 'A network error occurred. Please try again.';
     }
   };
 
