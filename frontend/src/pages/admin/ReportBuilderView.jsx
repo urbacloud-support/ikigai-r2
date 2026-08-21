@@ -8,6 +8,7 @@ import { authFetch } from '../../config/api';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import logo from '../../assets/ikigai.png';
 
 export default function ReportBuilderView() {
   const [events, setEvents] = useState([]);
@@ -24,11 +25,14 @@ export default function ReportBuilderView() {
     members: true,
     institute: true,
     teamLeader: true,
-    finalResult: true
+    finalResult: true,
+    progressRemarks: true
   });
 
   const [selectedCriteria, setSelectedCriteria] = useState({});
   const [criteriaFilter, setCriteriaFilter] = useState('all'); // 'all', 'numeric', 'text'
+  const [showTotal, setShowTotal] = useState(true);
+  const [includeMarks, setIncludeMarks] = useState(true);
 
   // Sort & Filter
   const [sortBy, setSortBy] = useState('teamName'); // 'teamName', 'totalScore', 'trackName'
@@ -51,12 +55,13 @@ export default function ReportBuilderView() {
           initialSelected[c.name] = true;
         });
         setSelectedCriteria(initialSelected);
+        setShowTotal(true);
       }
     } else {
       setTeams([]);
       setSelectedCriteria({});
     }
-  }, [selectedEventId]);
+  }, [selectedEventId, events]);
 
   const fetchEvents = async () => {
     try {
@@ -93,14 +98,20 @@ export default function ReportBuilderView() {
       
       let totalScore = 0;
       let criteriaScores = {};
+      let progressRemarks = '';
       
       if (assessmentData && assessmentData.evaluatorScores) {
         // Compute average for each criteria across evaluators
         const criteriaTotals = {};
         const criteriaCounts = {};
+        const progressTexts = [];
         
         assessmentData.evaluatorScores.forEach(evalScore => {
           if (evalScore.mode === 'absent') return;
+          
+          if (evalScore.progress) {
+            progressTexts.push(`${evalScore.evaluatorName}: ${evalScore.progress}`);
+          }
           
           evalScore.criteria.forEach(c => {
             if (c.inputType === 'number' || c.inputType === 'boolean') {
@@ -123,12 +134,14 @@ export default function ReportBuilderView() {
             criteriaScores[c.name] = criteriaScores[c.name] ? criteriaScores[c.name].join(' | ') : 'No remarks';
           }
         });
+        progressRemarks = progressTexts.join(' | ');
       }
 
       return {
         ...team,
         calculatedTotalScore: totalScore,
-        criteriaScores
+        criteriaScores,
+        progressRemarks
       };
     });
 
@@ -181,10 +194,11 @@ export default function ReportBuilderView() {
     if (selectedFixedFields.teamLeader) headers.push("Team Leader");
     if (selectedFixedFields.institute) headers.push("Institute");
     if (selectedFixedFields.finalResult) headers.push("Result");
+    if (selectedFixedFields.progressRemarks) headers.push("Progress Remarks");
     
     const criteriaHeaders = selectedEvent.criteria.filter(c => selectedCriteria[c.name]).map(c => c.name);
     headers.push(...criteriaHeaders);
-    headers.push("Total Score");
+    if (showTotal) headers.push("Total Score");
 
     const rows = processedTeams.map(team => {
       const row = {};
@@ -196,11 +210,12 @@ export default function ReportBuilderView() {
       if (selectedFixedFields.teamLeader) row["Team Leader"] = team.leaderEmail || '-';
       if (selectedFixedFields.institute) row["Institute"] = team.members?.[0]?.organisation || '-';
       if (selectedFixedFields.finalResult) row["Result"] = team.status || '-';
+      if (selectedFixedFields.progressRemarks) row["Progress Remarks"] = includeMarks ? (team.progressRemarks || '-') : '';
       
       criteriaHeaders.forEach(c => {
-        row[c] = team.criteriaScores?.[c] ?? '-';
+        row[c] = includeMarks ? (team.criteriaScores?.[c] ?? '-') : '';
       });
-      row["Total Score"] = team.calculatedTotalScore;
+      if (showTotal) row["Total Score"] = includeMarks ? team.calculatedTotalScore : '';
       
       return row;
     });
@@ -219,94 +234,98 @@ export default function ReportBuilderView() {
   const exportPDF = () => {
     if (!selectedEvent || processedTeams.length === 0) return alert("No data to export.");
     
-    const doc = new jsPDF();
+    const doc = new jsPDF('landscape');
     
-    // Global Document Header (Violet 700)
-    doc.setFillColor(109, 40, 217); 
-    doc.rect(0, 0, 210, 40, 'F');
+    // Purple to Pink Gradient Header
+    for (let i = 0; i < doc.internal.pageSize.width; i++) {
+      const ratio = i / doc.internal.pageSize.width;
+      const r = 109 + (236 - 109) * ratio;
+      const g = 40 + (72 - 40) * ratio;
+      const b = 217 + (153 - 217) * ratio;
+      doc.setFillColor(r, g, b);
+      doc.rect(i, 0, 1, 32, 'F');
+    }
     
-    doc.setFontSize(22);
+    const logoEl = document.getElementById('report-logo');
+    if (logoEl) {
+      doc.addImage(logoEl, 'PNG', doc.internal.pageSize.width - 50, 4, 38, 24);
+    }
+    
+    doc.setFontSize(18);
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
-    doc.text(`Assessment Report`, 14, 20);
+    doc.text(`Assessment Report${!includeMarks ? ' (Shell / Empty)' : ''}`, 14, 18);
     
-    doc.setFontSize(12);
+    doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text(`${selectedEvent.title} | Generated: ${new Date().toLocaleDateString()}`, 14, 30);
+    doc.text(`${selectedEvent.title} | Generated: ${new Date().toLocaleString()}`, 14, 25);
     
-    let currentY = 50;
+    const headers = [];
+    const colStyles = {};
+    let colIdx = 0;
+
+    if (selectedFixedFields.teamName) { headers.push("Team Name"); colStyles[colIdx++] = {}; }
+    if (selectedFixedFields.teamId) { headers.push("Team ID"); colStyles[colIdx++] = { fontSize: 7 }; }
+    if (selectedFixedFields.trackName) { headers.push("Track"); colStyles[colIdx++] = { fontSize: 7 }; }
+    if (selectedFixedFields.problemStatement) { headers.push("Problem"); colStyles[colIdx++] = { fontSize: 7 }; }
+    if (selectedFixedFields.members) { headers.push("Members"); colStyles[colIdx++] = { halign: 'center' }; }
+    if (selectedFixedFields.teamLeader) { headers.push("Leader"); colStyles[colIdx++] = { fontSize: 7 }; }
+    if (selectedFixedFields.institute) { headers.push("Institute"); colStyles[colIdx++] = { fontSize: 7 }; }
+    if (selectedFixedFields.finalResult) { headers.push("Result"); colStyles[colIdx++] = {}; }
+    if (selectedFixedFields.progressRemarks) { headers.push("Progress Remarks"); colStyles[colIdx++] = { fontSize: 7, minCellWidth: 35 }; }
     
-    processedTeams.forEach((team, idx) => {
-      // Add page if we don't have enough space for at least the team header and some info
-      if (currentY > 240) {
-        doc.addPage();
-        currentY = 20;
+    const criteriaHeaders = selectedEvent.criteria.filter(c => selectedCriteria[c.name]);
+    criteriaHeaders.forEach(c => {
+      headers.push(c.name);
+      if (c.inputType === 'text') {
+        colStyles[colIdx++] = { fontSize: 7, minCellWidth: 30 };
+      } else {
+        colStyles[colIdx++] = { minCellWidth: 16, halign: 'center' };
       }
+    });
+
+    if (showTotal) { 
+      headers.push("Total"); 
+      colStyles[colIdx++] = { minCellWidth: 16, halign: 'center', fontStyle: 'bold' }; 
+    }
+
+    const rows = processedTeams.map((team) => {
+      const row = [];
+      if (selectedFixedFields.teamName) row.push(team.teamName || 'Unnamed Team');
+      if (selectedFixedFields.teamId) row.push(team._id);
+      if (selectedFixedFields.trackName) row.push(getTrackName(team.assignedTrack) || '-');
+      if (selectedFixedFields.problemStatement) row.push(getProblemStatementName(team.assignedProblemStatement, true) || '-');
+      if (selectedFixedFields.members) row.push(String(team.members?.length || 0));
+      if (selectedFixedFields.teamLeader) row.push(team.leaderEmail || '-');
+      if (selectedFixedFields.institute) row.push(team.members?.[0]?.organisation || '-');
+      if (selectedFixedFields.finalResult) row.push(team.status || '-');
+      if (selectedFixedFields.progressRemarks) row.push(includeMarks ? (team.progressRemarks || '-') : ' ');
       
-      // Team Section Banner (Violet 100)
-      doc.setFillColor(237, 233, 254);
-      doc.rect(14, currentY - 6, 182, 12, 'F');
-      
-      doc.setFontSize(14);
-      doc.setTextColor(91, 33, 182); // Violet 800
-      doc.setFont("helvetica", "bold");
-      const tName = selectedFixedFields.teamName ? team.teamName || 'Unnamed Team' : `Team ${idx+1}`;
-      doc.text(tName.toUpperCase(), 16, currentY + 2);
-      currentY += 12;
-      
-      const infoBody = [];
-      if (selectedFixedFields.teamId) infoBody.push(['Team ID', team._id]);
-      if (selectedFixedFields.trackName) infoBody.push(['Track', getTrackName(team.assignedTrack) || '-']);
-      if (selectedFixedFields.problemStatement) infoBody.push(['Problem', getProblemStatementName(team.assignedProblemStatement, true) || '-']);
-      if (selectedFixedFields.members) infoBody.push(['Members Count', String(team.members?.length || 0)]);
-      if (selectedFixedFields.teamLeader) infoBody.push(['Team Leader', team.leaderEmail || '-']);
-      if (selectedFixedFields.institute) infoBody.push(['Institute', team.members?.[0]?.organisation || '-']);
-      if (selectedFixedFields.finalResult) infoBody.push(['Result', team.status || '-']);
-      
-      if (infoBody.length > 0) {
-        autoTable(doc, {
-          startY: currentY,
-          body: infoBody,
-          theme: 'plain',
-          styles: { cellPadding: 1.5, fontSize: 10, textColor: [75, 85, 99] }, // Gray 600
-          columnStyles: { 0: { fontStyle: 'bold', textColor: [219, 39, 119], cellWidth: 45 } } // Pink 600 for keys
-        });
-        currentY = doc.lastAutoTable.finalY + 8;
-      }
-      
-      const criteriaBody = selectedEvent.criteria
-        .filter(c => selectedCriteria[c.name])
-        .map(c => [c.name, team.criteriaScores?.[c.name] ?? '-']);
-        
-      criteriaBody.push(['Calculated Total Score', String(team.calculatedTotalScore)]);
-      
-      autoTable(doc, {
-        startY: currentY,
-        head: [['Assessment Criteria', 'Value / Remarks']],
-        body: criteriaBody,
-        theme: 'grid',
-        headStyles: { fillColor: [192, 38, 211], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 11 }, // Fuchsia 600
-        alternateRowStyles: { fillColor: [253, 244, 255] }, // Fuchsia 50
-        styles: { fontSize: 9.5, textColor: [31, 41, 55], lineColor: [250, 232, 255], lineWidth: 0.1 }, // Fuchsia 100 borders
-        columnStyles: { 0: { fontStyle: 'bold' } },
-        didParseCell: function (data) {
-          // Highlight the total score row
-          if (data.row.index === criteriaBody.length - 1 && data.section === 'body') {
-            data.cell.styles.fillColor = [253, 232, 243]; // Pink 100
-            data.cell.styles.textColor = [190, 24, 93]; // Pink 700
-            data.cell.styles.fontStyle = 'bold';
-          }
-        }
+      criteriaHeaders.forEach(c => {
+        row.push(includeMarks ? String(team.criteriaScores?.[c.name] ?? '-') : ' ');
       });
-      
-      currentY = doc.lastAutoTable.finalY + 18;
+      if (showTotal) {
+        row.push(includeMarks ? String(team.calculatedTotalScore) : ' ');
+      }
+      return row;
+    });
+
+    autoTable(doc, {
+      startY: 37,
+      head: [headers],
+      body: rows,
+      theme: 'grid',
+      headStyles: { fillColor: [147, 51, 234], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+      styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+      columnStyles: colStyles
     });
     
-    doc.save(`${selectedEvent.title}_Report.pdf`);
+    doc.save(`${selectedEvent.title}_Report${!includeMarks ? '_Shell' : ''}.pdf`);
   };
 
   return (
     <div className="h-full flex flex-col">
+      <img id="report-logo" src={logo} className="hidden" alt="logo" />
       <div className="p-6 bg-white border-b border-gray-200 flex justify-between items-center shrink-0">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
@@ -396,6 +415,20 @@ export default function ReportBuilderView() {
             <CheckSquare size={16} className="text-primary-500"/> Step 2: Configure Fields
           </h3>
           
+          <div className="mb-6 border-b pb-6 border-gray-100">
+            <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase">Export Mode</h4>
+            <label className="flex items-center gap-2 p-1.5 bg-primary-50 rounded-lg border border-primary-100 cursor-pointer mb-1">
+              <input 
+                type="checkbox" 
+                checked={includeMarks}
+                onChange={() => setIncludeMarks(!includeMarks)}
+                className="w-4 h-4 text-primary-600 rounded border-primary-300"
+              />
+              <span className="text-sm font-semibold text-primary-900">Include Evaluator Marks</span>
+            </label>
+            <p className="text-[10px] text-gray-500 leading-tight px-1.5">Uncheck to download an empty shell report (useful for physical pen-paper marking).</p>
+          </div>
+
           <div className="mb-6">
             <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase">Team Information</h4>
             <div className="space-y-1.5">
@@ -458,6 +491,21 @@ export default function ReportBuilderView() {
                 {selectedEvent.criteria.length === 0 && (
                   <p className="text-sm text-gray-500 italic">No criteria defined for this event.</p>
                 )}
+                
+                {criteriaFilter !== 'text' && (
+                  <label className="flex items-start gap-2 p-1.5 hover:bg-gray-50 rounded cursor-pointer border-t border-gray-100 mt-2 pt-2">
+                    <input 
+                      type="checkbox" 
+                      checked={showTotal}
+                      onChange={() => setShowTotal(!showTotal)}
+                      className="w-4 h-4 text-primary-600 rounded border-gray-300 mt-0.5 shrink-0"
+                    />
+                    <div>
+                      <span className="text-sm font-bold text-gray-800 leading-tight block">Total (Numeric Sum)</span>
+                      <span className="text-[10px] text-gray-400 uppercase">calculated</span>
+                    </div>
+                  </label>
+                )}
               </div>
             </div>
           )}
@@ -466,7 +514,7 @@ export default function ReportBuilderView() {
         {/* Right Panel: Live Preview */}
         <div className="flex-1 p-6 overflow-y-auto bg-gray-100/50">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-bold text-gray-800">Report Preview</h2>
+            <h2 className="text-lg font-bold text-gray-800">Report Preview {includeMarks ? '' : '(Shell Mode)'}</h2>
             <div className="text-sm text-gray-500">
               {loading ? (
                 <span className="flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> Loading data...</span>
@@ -482,102 +530,51 @@ export default function ReportBuilderView() {
               <p>Select an event to preview the report</p>
             </div>
           ) : (
-            <div className="space-y-8 pb-10">
-              {processedTeams.map((team, idx) => (
-                <div key={team._id || idx} className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden page-break-after-auto break-inside-avoid">
-                  
-                  {/* Team Header */}
-                  <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-                    <h3 className="text-xl font-bold text-gray-900">{selectedFixedFields.teamName ? team.teamName || 'Unnamed Team' : `Team ${idx+1}`}</h3>
-                  </div>
-
-                  <div className="p-6">
-                    {/* Fixed Info Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-8">
-                      {selectedFixedFields.teamId && (
-                        <div className="flex border-b border-gray-100 pb-2">
-                          <span className="w-1/3 text-sm font-semibold text-gray-500">Team ID</span>
-                          <span className="w-2/3 text-sm font-medium text-gray-900">{team._id}</span>
-                        </div>
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto pb-4">
+              <table className="w-full text-left border-collapse whitespace-nowrap min-w-max">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    {selectedFixedFields.teamName && <th className="py-3 px-4 text-xs font-bold text-gray-700">Team Name</th>}
+                    {selectedFixedFields.teamId && <th className="py-3 px-4 text-xs font-bold text-gray-700">Team ID</th>}
+                    {selectedFixedFields.trackName && <th className="py-3 px-4 text-xs font-bold text-gray-700">Track</th>}
+                    {selectedFixedFields.problemStatement && <th className="py-3 px-4 text-xs font-bold text-gray-700 max-w-[200px] truncate">Problem</th>}
+                    {selectedFixedFields.members && <th className="py-3 px-4 text-xs font-bold text-gray-700">Members</th>}
+                    {selectedFixedFields.teamLeader && <th className="py-3 px-4 text-xs font-bold text-gray-700">Leader</th>}
+                    {selectedFixedFields.institute && <th className="py-3 px-4 text-xs font-bold text-gray-700 max-w-[150px] truncate">Institute</th>}
+                    {selectedFixedFields.finalResult && <th className="py-3 px-4 text-xs font-bold text-gray-700">Result</th>}
+                    {selectedFixedFields.progressRemarks && <th className="py-3 px-4 text-xs font-bold text-gray-700 max-w-[200px] truncate">Progress / Remarks</th>}
+                    {selectedEvent.criteria.filter(c => selectedCriteria[c.name]).map((c, i) => (
+                      <th key={i} className="py-3 px-4 text-xs font-bold text-gray-700">{c.name}</th>
+                    ))}
+                    {showTotal && <th className="py-3 px-4 text-xs font-bold text-gray-700 bg-primary-50">Total</th>}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {processedTeams.map((team, idx) => (
+                    <tr key={team._id || idx} className="hover:bg-gray-50">
+                      {selectedFixedFields.teamName && <td className="py-2.5 px-4 text-sm font-medium text-gray-900">{team.teamName || 'Unnamed Team'}</td>}
+                      {selectedFixedFields.teamId && <td className="py-2.5 px-4 text-xs text-gray-500 font-mono">{team._id}</td>}
+                      {selectedFixedFields.trackName && <td className="py-2.5 px-4 text-sm text-gray-600">{getTrackName(team.assignedTrack) || '-'}</td>}
+                      {selectedFixedFields.problemStatement && <td className="py-2.5 px-4 text-sm text-gray-600 max-w-[200px] truncate" title={getProblemStatementName(team.assignedProblemStatement, true)}>{getProblemStatementName(team.assignedProblemStatement, true) || '-'}</td>}
+                      {selectedFixedFields.members && <td className="py-2.5 px-4 text-sm text-gray-600">{team.members?.length || 0}</td>}
+                      {selectedFixedFields.teamLeader && <td className="py-2.5 px-4 text-sm text-gray-600">{team.leaderEmail || '-'}</td>}
+                      {selectedFixedFields.institute && <td className="py-2.5 px-4 text-sm text-gray-600 max-w-[150px] truncate">{team.members?.[0]?.organisation || '-'}</td>}
+                      {selectedFixedFields.finalResult && <td className="py-2.5 px-4 text-sm font-bold text-primary-700">{team.status || '-'}</td>}
+                      {selectedFixedFields.progressRemarks && <td className="py-2.5 px-4 text-xs text-gray-600 max-w-[200px] truncate" title={team.progressRemarks}>{includeMarks ? (team.progressRemarks || '-') : ''}</td>}
+                      {selectedEvent.criteria.filter(c => selectedCriteria[c.name]).map((c, i) => (
+                        <td key={i} className="py-2.5 px-4 text-sm text-gray-600 border-l border-gray-100">
+                          {includeMarks ? (team.criteriaScores?.[c.name] ?? '-') : ''}
+                        </td>
+                      ))}
+                      {showTotal && (
+                        <td className="py-2.5 px-4 text-sm font-bold text-primary-700 bg-primary-50/30 border-l border-primary-100">
+                          {includeMarks ? team.calculatedTotalScore : ''}
+                        </td>
                       )}
-                      {selectedFixedFields.trackName && (
-                        <div className="flex border-b border-gray-100 pb-2">
-                          <span className="w-1/3 text-sm font-semibold text-gray-500">Track</span>
-                          <span className="w-2/3 text-sm font-medium text-gray-900">{getTrackName(team.assignedTrack) || '-'}</span>
-                        </div>
-                      )}
-                      {selectedFixedFields.problemStatement && (
-                        <div className="flex border-b border-gray-100 pb-2">
-                          <span className="w-1/3 text-sm font-semibold text-gray-500">Problem</span>
-                          <span className="w-2/3 text-sm font-medium text-gray-900">{getProblemStatementName(team.assignedProblemStatement, true) || '-'}</span>
-                        </div>
-                      )}
-                      {selectedFixedFields.members && (
-                        <div className="flex border-b border-gray-100 pb-2">
-                          <span className="w-1/3 text-sm font-semibold text-gray-500">Members</span>
-                          <span className="w-2/3 text-sm font-medium text-gray-900">{team.members?.length || 0}</span>
-                        </div>
-                      )}
-                      {selectedFixedFields.teamLeader && (
-                        <div className="flex border-b border-gray-100 pb-2">
-                          <span className="w-1/3 text-sm font-semibold text-gray-500">Leader</span>
-                          <span className="w-2/3 text-sm font-medium text-gray-900">{team.leaderEmail || '-'}</span>
-                        </div>
-                      )}
-                      {selectedFixedFields.institute && (
-                        <div className="flex border-b border-gray-100 pb-2">
-                          <span className="w-1/3 text-sm font-semibold text-gray-500">Institute</span>
-                          <span className="w-2/3 text-sm font-medium text-gray-900">{team.members?.[0]?.organisation || '-'}</span>
-                        </div>
-                      )}
-                      {selectedFixedFields.finalResult && (
-                        <div className="flex border-b border-gray-100 pb-2">
-                          <span className="w-1/3 text-sm font-semibold text-gray-500">Result</span>
-                          <span className="w-2/3 text-sm font-bold text-primary-700">{team.status || '-'}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Assessment Criteria Vertical Layout */}
-                    <h4 className="text-base font-bold text-gray-800 mb-4 border-b pb-2">Assessment Details</h4>
-                    <div className="border border-gray-200 rounded-lg overflow-hidden">
-                      <table className="w-full text-left border-collapse">
-                        <thead>
-                          <tr className="bg-gray-50 border-b border-gray-200">
-                            <th className="py-3 px-4 text-sm font-bold text-gray-700 w-1/3">Assessment Criteria</th>
-                            <th className="py-3 px-4 text-sm font-bold text-gray-700 w-2/3">Value / Remarks</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {selectedEvent.criteria
-                            .filter(c => selectedCriteria[c.name])
-                            .map((c, i) => (
-                            <tr key={i} className="hover:bg-gray-50/50">
-                              <td className="py-3 px-4 text-sm font-medium text-gray-800 align-top">
-                                {c.name}
-                              </td>
-                              <td className="py-3 px-4 text-sm text-gray-600 align-top break-words whitespace-pre-wrap">
-                                {team.criteriaScores?.[c.name] ?? '-'}
-                              </td>
-                            </tr>
-                          ))}
-                          
-                          {/* Total Score Row */}
-                          <tr className="bg-primary-50/30">
-                            <td className="py-3 px-4 text-sm font-bold text-gray-900 uppercase">
-                              Calculated Total Score
-                            </td>
-                            <td className="py-3 px-4 text-sm font-bold text-primary-700">
-                              {team.calculatedTotalScore}
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
               {processedTeams.length === 0 && !loading && (
                 <div className="text-center py-12 text-gray-500">
                   No teams match the current filters for this event.
