@@ -12,71 +12,55 @@ import logo from '../../assets/ikigai.png';
 
 export default function ReportBuilderView() {
   const [events, setEvents] = useState([]);
-  const [selectedEventId, setSelectedEventId] = useState('');
+  const [selectedEventIds, setSelectedEventIds] = useState([]);
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(false);
   
   // Field Selection
   const [selectedFixedFields, setSelectedFixedFields] = useState({
     teamName: true,
-    teamId: true,
     trackName: true,
     problemStatement: true,
-    members: true,
     institute: true,
-    teamLeader: true,
-    finalResult: true,
-    progressRemarks: true
+    teamLeader: true
   });
 
   const [selectedCriteria, setSelectedCriteria] = useState({});
   const [criteriaFilter, setCriteriaFilter] = useState('all'); // 'all', 'numeric', 'text'
+  const [showProgressNotes, setShowProgressNotes] = useState(true);
   const [showTotal, setShowTotal] = useState(true);
   const [includeMarks, setIncludeMarks] = useState(true);
+  const [signatureNames, setSignatureNames] = useState('');
 
-  // Sort & Filter
-  const [sortBy, setSortBy] = useState('teamName'); // 'teamName', 'totalScore', 'trackName'
-  const [sortOrder, setSortOrder] = useState('asc'); // 'asc', 'desc'
-  const [minScoreFilter, setMinScoreFilter] = useState('');
+  // Filter
+  const [filterTrack, setFilterTrack] = useState('all');
+
+  // Sort
+  const [sortBy, setSortBy] = useState('totalScore'); // default to totalScore
+  const [sortOrder, setSortOrder] = useState('desc'); // default to desc
 
   useEffect(() => {
     fetchEvents();
+    fetchAllTeams();
   }, []);
-
-  useEffect(() => {
-    if (selectedEventId) {
-      fetchTeams(selectedEventId);
-      
-      // Auto-select all criteria for the selected event initially
-      const event = events.find(e => e._id === selectedEventId);
-      if (event && event.criteria) {
-        const initialSelected = {};
-        event.criteria.forEach(c => {
-          initialSelected[c.name] = true;
-        });
-        setSelectedCriteria(initialSelected);
-        setShowTotal(true);
-      }
-    } else {
-      setTeams([]);
-      setSelectedCriteria({});
-    }
-  }, [selectedEventId, events]);
 
   const fetchEvents = async () => {
     try {
       const res = await authFetch(`/admin/events`);
       const data = await res.json();
       setEvents(data);
+      if (data.length > 0) {
+        setSelectedEventIds([data[0]._id]);
+      }
     } catch (err) {
       console.error(err);
     }
   };
 
-  const fetchTeams = async (eventId) => {
+  const fetchAllTeams = async () => {
     setLoading(true);
     try {
-      const res = await authFetch(`/admin/teams?eventId=${eventId}`);
+      const res = await authFetch(`/admin/teams`);
       const data = await res.json();
       setTeams(data);
     } catch (err) {
@@ -86,46 +70,89 @@ export default function ReportBuilderView() {
     }
   };
 
-  const selectedEvent = events.find(e => e._id === selectedEventId);
+  const activeEvents = events.filter(e => selectedEventIds.includes(e._id));
+
+  const mergedCriteria = React.useMemo(() => {
+    const map = new Map();
+    activeEvents.forEach(e => {
+      e.criteria?.forEach(c => {
+        if (!map.has(c.name)) map.set(c.name, c);
+      });
+    });
+    return Array.from(map.values());
+  }, [activeEvents]);
+
+  // Auto-select newly added criteria
+  useEffect(() => {
+    const newSelected = { ...selectedCriteria };
+    let changed = false;
+    mergedCriteria.forEach(c => {
+      if (newSelected[c.name] === undefined) {
+        newSelected[c.name] = true;
+        changed = true;
+      }
+    });
+    if (changed) {
+      setSelectedCriteria(newSelected);
+    }
+  }, [mergedCriteria, selectedCriteria]);
+
+  const toggleSelection = (setter, value) => {
+    setter(prev => 
+      prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]
+    );
+  };
+
+  // Derive unique tracks from all teams, sorted numerically
+  const availableTracks = React.useMemo(() => {
+    const codes = [...new Set(teams.map(t => t.assignedTrack).filter(Boolean))];
+    return codes.sort((a, b) => {
+      const numA = parseInt(a, 10);
+      const numB = parseInt(b, 10);
+      if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+      return a.localeCompare(b);
+    });
+  }, [teams]);
 
   // Compute Data for preview
   const getProcessedTeams = () => {
-    if (!selectedEvent) return [];
+    if (selectedEventIds.length === 0) return [];
 
     let processed = teams.map(team => {
-      // Find assessments for this event
-      const assessmentData = team.assessments?.find(a => a.eventId === selectedEventId || a.eventName === selectedEvent.title);
-      
       let totalScore = 0;
       let criteriaScores = {};
-      let progressRemarks = '';
+      let progressTexts = [];
+
+      const matchingAssessments = team.assessments?.filter(a => selectedEventIds.includes(a.eventId));
       
-      if (assessmentData && assessmentData.evaluatorScores) {
-        // Compute average for each criteria across evaluators
+      if (matchingAssessments && matchingAssessments.length > 0) {
         const criteriaTotals = {};
         const criteriaCounts = {};
-        const progressTexts = [];
         
-        assessmentData.evaluatorScores.forEach(evalScore => {
-          if (evalScore.mode === 'absent') return;
-          
-          if (evalScore.progress) {
-            progressTexts.push(`${evalScore.evaluatorName}: ${evalScore.progress}`);
+        matchingAssessments.forEach(assessmentData => {
+          if (assessmentData.evaluatorScores) {
+            assessmentData.evaluatorScores.forEach(evalScore => {
+              if (evalScore.mode === 'absent') return;
+              
+              if (evalScore.progress) {
+                progressTexts.push({ evaluatorName: evalScore.evaluatorName, remark: evalScore.progress });
+              }
+              
+              evalScore.criteria.forEach(c => {
+                if (c.inputType === 'number' || c.inputType === 'boolean') {
+                  criteriaTotals[c.name] = (criteriaTotals[c.name] || 0) + Number(c.score || 0);
+                  criteriaCounts[c.name] = (criteriaCounts[c.name] || 0) + 1;
+                } else if (c.inputType === 'text') {
+                  if (!criteriaScores[c.name]) criteriaScores[c.name] = [];
+                  if (c.score) criteriaScores[c.name].push(`${evalScore.evaluatorName}: ${c.score}`);
+                }
+              });
+            });
           }
-          
-          evalScore.criteria.forEach(c => {
-            if (c.inputType === 'number' || c.inputType === 'boolean') {
-              criteriaTotals[c.name] = (criteriaTotals[c.name] || 0) + Number(c.score || 0);
-              criteriaCounts[c.name] = (criteriaCounts[c.name] || 0) + 1;
-            } else if (c.inputType === 'text') {
-              if (!criteriaScores[c.name]) criteriaScores[c.name] = [];
-              if (c.score) criteriaScores[c.name].push(`${evalScore.evaluatorName}: ${c.score}`);
-            }
-          });
         });
 
-        // Calculate averages
-        selectedEvent.criteria.forEach(c => {
+        // Calculate averages using mergedCriteria
+        mergedCriteria.forEach(c => {
           if (c.inputType === 'number' || c.inputType === 'boolean') {
             const avg = criteriaCounts[c.name] ? (criteriaTotals[c.name] / criteriaCounts[c.name]).toFixed(1) : 0;
             criteriaScores[c.name] = avg;
@@ -134,20 +161,26 @@ export default function ReportBuilderView() {
             criteriaScores[c.name] = criteriaScores[c.name] ? criteriaScores[c.name].join(' | ') : 'No remarks';
           }
         });
-        progressRemarks = progressTexts.join(' | ');
       }
 
       return {
         ...team,
         calculatedTotalScore: totalScore,
         criteriaScores,
-        progressRemarks
+        progressRemarks: progressTexts
       };
     });
 
-    // Apply Filter
-    if (minScoreFilter) {
-      processed = processed.filter(t => t.calculatedTotalScore >= Number(minScoreFilter));
+    // Apply Filters
+    // Only include teams that are part of selected events OR have matching assessments
+    processed = processed.filter(t => 
+      selectedEventIds.includes(t.eventId) || 
+      t.assessments?.some(a => selectedEventIds.includes(a.eventId))
+    );
+
+    // Filter by track
+    if (filterTrack !== 'all') {
+      processed = processed.filter(t => t.assignedTrack === filterTrack);
     }
 
     // Apply Sort
@@ -160,8 +193,8 @@ export default function ReportBuilderView() {
         valA = a.calculatedTotalScore;
         valB = b.calculatedTotalScore;
       } else if (sortBy === 'trackName') {
-        valA = a.assignedTrack;
-        valB = b.assignedTrack;
+        valA = a.assignedTrack || '';
+        valB = b.assignedTrack || '';
       }
 
       if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
@@ -183,38 +216,41 @@ export default function ReportBuilderView() {
   };
 
   const exportExcelCsv = (format) => {
-    if (!selectedEvent || processedTeams.length === 0) return alert("No data to export.");
+    if (selectedEventIds.length === 0 || processedTeams.length === 0) return alert("No data to export.");
     
     const headers = [];
     if (selectedFixedFields.teamName) headers.push("Team Name");
-    if (selectedFixedFields.teamId) headers.push("Team ID");
     if (selectedFixedFields.trackName) headers.push("Track");
     if (selectedFixedFields.problemStatement) headers.push("Problem Statement");
-    if (selectedFixedFields.members) headers.push("Members");
     if (selectedFixedFields.teamLeader) headers.push("Team Leader");
     if (selectedFixedFields.institute) headers.push("Institute");
-    if (selectedFixedFields.finalResult) headers.push("Result");
-    if (selectedFixedFields.progressRemarks) headers.push("Progress Remarks");
     
-    const criteriaHeaders = selectedEvent.criteria.filter(c => selectedCriteria[c.name]).map(c => c.name);
+    const criteriaHeaders = mergedCriteria.filter(c => selectedCriteria[c.name]).map(c => c.name);
     headers.push(...criteriaHeaders);
+    
+    if (showProgressNotes) headers.push("Progress Remarks");
     if (showTotal) headers.push("Total Score");
 
     const rows = processedTeams.map(team => {
       const row = {};
       if (selectedFixedFields.teamName) row["Team Name"] = team.teamName || 'Unnamed Team';
-      if (selectedFixedFields.teamId) row["Team ID"] = team._id;
       if (selectedFixedFields.trackName) row["Track"] = getTrackName(team.assignedTrack) || '-';
       if (selectedFixedFields.problemStatement) row["Problem Statement"] = getProblemStatementName(team.assignedProblemStatement, true) || '-';
-      if (selectedFixedFields.members) row["Members"] = team.members?.length || 0;
       if (selectedFixedFields.teamLeader) row["Team Leader"] = team.leaderEmail || '-';
       if (selectedFixedFields.institute) row["Institute"] = team.members?.[0]?.organisation || '-';
-      if (selectedFixedFields.finalResult) row["Result"] = team.status || '-';
-      if (selectedFixedFields.progressRemarks) row["Progress Remarks"] = includeMarks ? (team.progressRemarks || '-') : '';
       
       criteriaHeaders.forEach(c => {
         row[c] = includeMarks ? (team.criteriaScores?.[c] ?? '-') : '';
       });
+
+      if (showProgressNotes) {
+        row["Progress Remarks"] = includeMarks 
+          ? (team.progressRemarks && team.progressRemarks.length > 0 
+              ? team.progressRemarks.map(pr => `${pr.evaluatorName}: ${pr.remark}`).join('\n') 
+              : '-') 
+          : '';
+      }
+
       if (showTotal) row["Total Score"] = includeMarks ? team.calculatedTotalScore : '';
       
       return row;
@@ -224,15 +260,16 @@ export default function ReportBuilderView() {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Report");
     
+    const displayTitle = activeEvents.length === 1 ? activeEvents[0].title : 'Combined_Events';
     if (format === 'csv') {
-      XLSX.writeFile(workbook, `${selectedEvent.title}_Report.csv`);
+      XLSX.writeFile(workbook, `${displayTitle}_Report.csv`);
     } else {
-      XLSX.writeFile(workbook, `${selectedEvent.title}_Report.xlsx`);
+      XLSX.writeFile(workbook, `${displayTitle}_Report.xlsx`);
     }
   };
 
   const exportPDF = () => {
-    if (!selectedEvent || processedTeams.length === 0) return alert("No data to export.");
+    if (selectedEventIds.length === 0 || processedTeams.length === 0) return alert("No data to export.");
     
     const doc = new jsPDF('landscape');
     
@@ -243,38 +280,38 @@ export default function ReportBuilderView() {
       const g = 40 + (72 - 40) * ratio;
       const b = 217 + (153 - 217) * ratio;
       doc.setFillColor(r, g, b);
-      doc.rect(i, 0, 1, 32, 'F');
+      doc.rect(i, 0, 1.5, 32, 'F'); // 1.5 width prevents sub-pixel gap lines
     }
     
     const logoEl = document.getElementById('report-logo');
     if (logoEl) {
-      doc.addImage(logoEl, 'PNG', doc.internal.pageSize.width - 50, 4, 38, 24);
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(doc.internal.pageSize.width - 44, 6, 40, 20, 2, 2, 'F');
+      doc.addImage(logoEl, 'PNG', doc.internal.pageSize.width - 42, 9, 36, 14);
     }
     
     doc.setFontSize(18);
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
-    doc.text(`Assessment Report${!includeMarks ? ' (Shell / Empty)' : ''}`, 14, 18);
+    doc.text(!includeMarks ? `Assessment Sheet` : `Assessment Report`, 14, 18);
     
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text(`${selectedEvent.title} | Generated: ${new Date().toLocaleString()}`, 14, 25);
+    const displayTitle = activeEvents.map(e => e.title).join(', ') || 'All Events';
+    const subTitleText = !includeMarks ? displayTitle : `${displayTitle} | Generated: ${new Date().toLocaleString()}`;
+    doc.text(subTitleText, 14, 25);
     
     const headers = [];
     const colStyles = {};
     let colIdx = 0;
 
-    if (selectedFixedFields.teamName) { headers.push("Team Name"); colStyles[colIdx++] = {}; }
-    if (selectedFixedFields.teamId) { headers.push("Team ID"); colStyles[colIdx++] = { fontSize: 7 }; }
-    if (selectedFixedFields.trackName) { headers.push("Track"); colStyles[colIdx++] = { fontSize: 7 }; }
-    if (selectedFixedFields.problemStatement) { headers.push("Problem"); colStyles[colIdx++] = { fontSize: 7 }; }
-    if (selectedFixedFields.members) { headers.push("Members"); colStyles[colIdx++] = { halign: 'center' }; }
-    if (selectedFixedFields.teamLeader) { headers.push("Leader"); colStyles[colIdx++] = { fontSize: 7 }; }
-    if (selectedFixedFields.institute) { headers.push("Institute"); colStyles[colIdx++] = { fontSize: 7 }; }
-    if (selectedFixedFields.finalResult) { headers.push("Result"); colStyles[colIdx++] = {}; }
-    if (selectedFixedFields.progressRemarks) { headers.push("Progress Remarks"); colStyles[colIdx++] = { fontSize: 7, minCellWidth: 35 }; }
+    if (selectedFixedFields.teamName) { headers.push("Team Name"); colStyles[colIdx++] = { minCellWidth: 18 }; }
+    if (selectedFixedFields.trackName) { headers.push("Track"); colStyles[colIdx++] = { fontSize: 7, minCellWidth: 15 }; }
+    if (selectedFixedFields.problemStatement) { headers.push("Problem"); colStyles[colIdx++] = { fontSize: 7, minCellWidth: 15 }; }
+    if (selectedFixedFields.teamLeader) { headers.push("Leader"); colStyles[colIdx++] = { fontSize: 7, minCellWidth: 18 }; }
+    if (selectedFixedFields.institute) { headers.push("Institute"); colStyles[colIdx++] = { fontSize: 7, minCellWidth: 15 }; }
     
-    const criteriaHeaders = selectedEvent.criteria.filter(c => selectedCriteria[c.name]);
+    const criteriaHeaders = mergedCriteria.filter(c => selectedCriteria[c.name]);
     criteriaHeaders.forEach(c => {
       headers.push(c.name);
       if (c.inputType === 'text') {
@@ -284,30 +321,55 @@ export default function ReportBuilderView() {
       }
     });
 
-    if (showTotal) { 
-      headers.push("Total"); 
-      colStyles[colIdx++] = { minCellWidth: 16, halign: 'center', fontStyle: 'bold' }; 
+    if (showProgressNotes) { 
+      headers.push({ content: "Progress Remarks", colSpan: 2, styles: { halign: 'center' } }); 
+      colStyles[colIdx++] = { fontSize: 7, minCellWidth: 18, fontStyle: 'bold', textColor: [100, 116, 139] }; // Evaluator
+      colStyles[colIdx++] = { fontSize: 7, minCellWidth: 35 }; // Remark
     }
 
-    const rows = processedTeams.map((team) => {
-      const row = [];
-      if (selectedFixedFields.teamName) row.push(team.teamName || 'Unnamed Team');
-      if (selectedFixedFields.teamId) row.push(team._id);
-      if (selectedFixedFields.trackName) row.push(getTrackName(team.assignedTrack) || '-');
-      if (selectedFixedFields.problemStatement) row.push(getProblemStatementName(team.assignedProblemStatement, true) || '-');
-      if (selectedFixedFields.members) row.push(String(team.members?.length || 0));
-      if (selectedFixedFields.teamLeader) row.push(team.leaderEmail || '-');
-      if (selectedFixedFields.institute) row.push(team.members?.[0]?.organisation || '-');
-      if (selectedFixedFields.finalResult) row.push(team.status || '-');
-      if (selectedFixedFields.progressRemarks) row.push(includeMarks ? (team.progressRemarks || '-') : ' ');
+    if (showTotal) { 
+      headers.push("Total"); 
+      colStyles[colIdx++] = { minCellWidth: 12, halign: 'center', fontStyle: 'bold' }; 
+    }
+
+    const rows = [];
+    processedTeams.forEach((team) => {
+      const remarks = (includeMarks && showProgressNotes && team.progressRemarks && team.progressRemarks.length > 0) 
+        ? team.progressRemarks 
+        : [{ evaluatorName: '-', remark: '-' }];
       
-      criteriaHeaders.forEach(c => {
-        row.push(includeMarks ? String(team.criteriaScores?.[c.name] ?? '-') : ' ');
+      const rowSpan = showProgressNotes ? remarks.length : 1;
+      const actualRemarks = showProgressNotes ? remarks : [{}];
+
+      actualRemarks.forEach((pr, idx) => {
+        const row = [];
+        
+        if (idx === 0) {
+          if (selectedFixedFields.teamName) row.push({ content: team.teamName || 'Unnamed Team', rowSpan });
+          if (selectedFixedFields.trackName) row.push({ content: getTrackName(team.assignedTrack) || '-', rowSpan });
+          if (selectedFixedFields.problemStatement) row.push({ content: getProblemStatementName(team.assignedProblemStatement, true) || '-', rowSpan });
+          if (selectedFixedFields.teamLeader) row.push({ content: team.leaderEmail || '-', rowSpan });
+          if (selectedFixedFields.institute) row.push({ content: team.members?.[0]?.organisation || '-', rowSpan });
+        }
+
+        if (idx === 0) {
+          criteriaHeaders.forEach(c => {
+            row.push({ content: includeMarks ? String(team.criteriaScores?.[c.name] ?? '-') : ' ', rowSpan });
+          });
+        }
+
+        if (showProgressNotes) {
+          row.push(includeMarks ? pr.evaluatorName || '-' : ' ');
+          row.push(includeMarks ? pr.remark || '-' : ' ');
+        }
+
+        if (idx === 0) {
+          if (showTotal) {
+            row.push({ content: includeMarks ? String(team.calculatedTotalScore) : ' ', rowSpan });
+          }
+        }
+        rows.push(row);
       });
-      if (showTotal) {
-        row.push(includeMarks ? String(team.calculatedTotalScore) : ' ');
-      }
-      return row;
     });
 
     autoTable(doc, {
@@ -315,12 +377,54 @@ export default function ReportBuilderView() {
       head: [headers],
       body: rows,
       theme: 'grid',
-      headStyles: { fillColor: [147, 51, 234], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
-      styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
-      columnStyles: colStyles
+      headStyles: { fillColor: [147, 51, 234], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7 },
+      styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak', valign: 'middle' },
+      columnStyles: colStyles,
+      margin: { bottom: 45 },
+      didDrawPage: function (data) {
+        const pageHeight = doc.internal.pageSize.height;
+        const pageWidth = doc.internal.pageSize.width;
+        
+        // Draw Signatures
+        if (signatureNames.trim()) {
+          const names = signatureNames.split(',').map(n => n.trim()).filter(n => n);
+          const count = names.length;
+          if (count > 0) {
+            const sigWidth = 35;
+            const gap = 15;
+            const totalWidth = (count * sigWidth) + ((count - 1) * gap);
+            const blockEndX = pageWidth - 14; // 14 is the standard margin
+            const blockStartX = blockEndX - totalWidth;
+
+            doc.setFontSize(8);
+            doc.setTextColor(0, 0, 0);
+            names.forEach((name, i) => {
+              const startX = blockStartX + (i * (sigWidth + gap));
+              const endX = startX + sigWidth;
+              const centerX = startX + (sigWidth / 2);
+              
+              doc.setLineWidth(0.3);
+              doc.setDrawColor(0, 0, 0);
+              doc.line(startX, pageHeight - 20, endX, pageHeight - 20);
+              doc.text(`Sign of ${name}`, centerX, pageHeight - 15, { align: 'center' });
+            });
+          }
+        }
+
+        // Draw Footer Divider
+        doc.setDrawColor(216, 180, 254); // Light purple line to simulate translucency
+        doc.setLineWidth(0.5);
+        doc.line(14, pageHeight - 9, pageWidth - 14, pageHeight - 9);
+
+        // Draw Footer
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text("acrocsit.in", pageWidth / 2, pageHeight - 5, { align: 'center' });
+      }
     });
-    
-    doc.save(`${selectedEvent.title}_Report${!includeMarks ? '_Shell' : ''}.pdf`);
+
+    const safeTitle = activeEvents.length === 1 ? activeEvents[0].title : 'Combined_Events';
+    doc.save(`${safeTitle}_Report${!includeMarks ? '_Shell' : ''}.pdf`);
   };
 
   return (
@@ -350,38 +454,42 @@ export default function ReportBuilderView() {
         
         {/* Left Panel: Event, Filter, Sort */}
         <div className="w-full md:w-1/4 lg:w-1/5 bg-white border-r border-gray-200 overflow-y-auto p-5 shrink-0 shadow-[2px_0_10px_rgba(0,0,0,0.02)] z-10">
+          
           <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-4 flex items-center gap-2">
-            <FileText size={16} className="text-primary-500"/> Step 1: Event
+            <FileText size={16} className="text-primary-500"/> Events
           </h3>
-          <div className="mb-6">
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Select Event</label>
-            <select 
-              className="w-full p-2 border border-gray-300 rounded-lg text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary-500"
-              value={selectedEventId}
-              onChange={e => setSelectedEventId(e.target.value)}
-            >
-              <option value="">-- Choose an Event --</option>
-              {events.map(e => (
-                <option key={e._id} value={e._id}>{e.title}</option>
-              ))}
-            </select>
+          <div className="mb-6 space-y-1.5 max-h-40 overflow-y-auto">
+            {events.map(e => (
+              <label key={e._id} className="flex items-start gap-2 p-1.5 hover:bg-gray-50 rounded cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={selectedEventIds.includes(e._id)}
+                  onChange={() => toggleSelection(setSelectedEventIds, e._id)}
+                  className="w-4 h-4 text-primary-600 rounded border-gray-300 mt-0.5 shrink-0"
+                />
+                <span className="text-sm text-gray-700 leading-tight block">{e.title}</span>
+              </label>
+            ))}
           </div>
 
           <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-4 flex items-center gap-2 border-t pt-4">
             <Filter size={16} className="text-primary-500"/> Filters
           </h3>
-          <div className="mb-4">
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Minimum Total Score</label>
-            <input 
-              type="number"
-              placeholder="e.g. 50"
-              value={minScoreFilter}
-              onChange={e => setMinScoreFilter(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg text-sm bg-gray-50 focus:bg-white"
-            />
+          <div className="mb-6 border-b border-gray-100 pb-4">
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Track</label>
+            <select
+              value={filterTrack}
+              onChange={e => setFilterTrack(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-lg text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="all">All Tracks</option>
+              {availableTracks.map(t => (
+                <option key={t} value={t}>{getTrackName(t) || t}</option>
+              ))}
+            </select>
           </div>
 
-          <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-4 flex items-center gap-2 border-t pt-4">
+          <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-4 flex items-center gap-2">
             <ListOrdered size={16} className="text-primary-500"/> Sorting
           </h3>
           <div className="mb-4">
@@ -391,8 +499,8 @@ export default function ReportBuilderView() {
               onChange={e => setSortBy(e.target.value)}
               className="w-full p-2 border border-gray-300 rounded-lg text-sm mb-2 bg-gray-50 focus:bg-white"
             >
-              <option value="teamName">Team Name</option>
               <option value="totalScore">Total Score</option>
+              <option value="teamName">Team Name</option>
               <option value="trackName">Track</option>
             </select>
             
@@ -445,8 +553,22 @@ export default function ReportBuilderView() {
               ))}
             </div>
           </div>
+          
+          <div className="mb-6">
+            <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase">PDF Signature Block</h4>
+            <label className="block text-[10px] font-semibold text-gray-500 mb-1 leading-tight">
+              Signatory Names (comma separated)
+            </label>
+            <input 
+              type="text"
+              placeholder="e.g. Judge 1, Judge 2"
+              value={signatureNames}
+              onChange={e => setSignatureNames(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-lg text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
 
-          {selectedEvent && (
+          {activeEvents.length > 0 && (
             <div>
               <div className="flex justify-between items-center mb-2">
                 <h4 className="text-xs font-bold text-gray-500 uppercase">Assessment Criteria</h4>
@@ -468,7 +590,7 @@ export default function ReportBuilderView() {
               </div>
 
               <div className="space-y-1.5 max-h-[300px] overflow-y-auto pr-2">
-                {selectedEvent.criteria
+                {mergedCriteria
                   .filter(c => {
                     if (criteriaFilter === 'numeric') return c.inputType === 'number' || c.inputType === 'boolean';
                     if (criteriaFilter === 'text') return c.inputType === 'text';
@@ -488,23 +610,38 @@ export default function ReportBuilderView() {
                     </div>
                   </label>
                 ))}
-                {selectedEvent.criteria.length === 0 && (
-                  <p className="text-sm text-gray-500 italic">No criteria defined for this event.</p>
+                {mergedCriteria.length === 0 && (
+                  <p className="text-sm text-gray-500 italic">No criteria defined for selected events.</p>
                 )}
                 
                 {criteriaFilter !== 'text' && (
-                  <label className="flex items-start gap-2 p-1.5 hover:bg-gray-50 rounded cursor-pointer border-t border-gray-100 mt-2 pt-2">
-                    <input 
-                      type="checkbox" 
-                      checked={showTotal}
-                      onChange={() => setShowTotal(!showTotal)}
-                      className="w-4 h-4 text-primary-600 rounded border-gray-300 mt-0.5 shrink-0"
-                    />
-                    <div>
-                      <span className="text-sm font-bold text-gray-800 leading-tight block">Total (Numeric Sum)</span>
-                      <span className="text-[10px] text-gray-400 uppercase">calculated</span>
-                    </div>
-                  </label>
+                  <>
+                    <label className="flex items-start gap-2 p-1.5 hover:bg-gray-50 rounded cursor-pointer border-t border-gray-100 mt-2 pt-2">
+                      <input 
+                        type="checkbox" 
+                        checked={showProgressNotes}
+                        onChange={() => setShowProgressNotes(!showProgressNotes)}
+                        className="w-4 h-4 text-primary-600 rounded border-gray-300 mt-0.5 shrink-0"
+                      />
+                      <div>
+                        <span className="text-sm font-bold text-gray-800 leading-tight block">Progress Notes</span>
+                        <span className="text-[10px] text-gray-400 uppercase">text remarks</span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-start gap-2 p-1.5 hover:bg-gray-50 rounded cursor-pointer border-t border-gray-100 mt-2 pt-2">
+                      <input 
+                        type="checkbox" 
+                        checked={showTotal}
+                        onChange={() => setShowTotal(!showTotal)}
+                        className="w-4 h-4 text-primary-600 rounded border-gray-300 mt-0.5 shrink-0"
+                      />
+                      <div>
+                        <span className="text-sm font-bold text-gray-800 leading-tight block">Total (Numeric Sum)</span>
+                        <span className="text-[10px] text-gray-400 uppercase">calculated</span>
+                      </div>
+                    </label>
+                  </>
                 )}
               </div>
             </div>
@@ -524,7 +661,7 @@ export default function ReportBuilderView() {
             </div>
           </div>
 
-          {!selectedEvent ? (
+          {activeEvents.length === 0 ? (
             <div className="bg-white border border-gray-200 rounded-2xl border-dashed h-64 flex flex-col items-center justify-center text-gray-400">
               <FileText size={48} className="mb-4 opacity-50" />
               <p>Select an event to preview the report</p>
@@ -535,17 +672,16 @@ export default function ReportBuilderView() {
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-200">
                     {selectedFixedFields.teamName && <th className="py-3 px-4 text-xs font-bold text-gray-700">Team Name</th>}
-                    {selectedFixedFields.teamId && <th className="py-3 px-4 text-xs font-bold text-gray-700">Team ID</th>}
                     {selectedFixedFields.trackName && <th className="py-3 px-4 text-xs font-bold text-gray-700">Track</th>}
                     {selectedFixedFields.problemStatement && <th className="py-3 px-4 text-xs font-bold text-gray-700 max-w-[200px] truncate">Problem</th>}
-                    {selectedFixedFields.members && <th className="py-3 px-4 text-xs font-bold text-gray-700">Members</th>}
                     {selectedFixedFields.teamLeader && <th className="py-3 px-4 text-xs font-bold text-gray-700">Leader</th>}
                     {selectedFixedFields.institute && <th className="py-3 px-4 text-xs font-bold text-gray-700 max-w-[150px] truncate">Institute</th>}
-                    {selectedFixedFields.finalResult && <th className="py-3 px-4 text-xs font-bold text-gray-700">Result</th>}
-                    {selectedFixedFields.progressRemarks && <th className="py-3 px-4 text-xs font-bold text-gray-700 max-w-[200px] truncate">Progress / Remarks</th>}
-                    {selectedEvent.criteria.filter(c => selectedCriteria[c.name]).map((c, i) => (
+                    
+                    {mergedCriteria.filter(c => selectedCriteria[c.name]).map((c, i) => (
                       <th key={i} className="py-3 px-4 text-xs font-bold text-gray-700">{c.name}</th>
                     ))}
+
+                    {showProgressNotes && <th className="py-3 px-4 text-xs font-bold text-gray-700 max-w-[200px] truncate">Progress / Remarks</th>}
                     {showTotal && <th className="py-3 px-4 text-xs font-bold text-gray-700 bg-primary-50">Total</th>}
                   </tr>
                 </thead>
@@ -553,19 +689,34 @@ export default function ReportBuilderView() {
                   {processedTeams.map((team, idx) => (
                     <tr key={team._id || idx} className="hover:bg-gray-50">
                       {selectedFixedFields.teamName && <td className="py-2.5 px-4 text-sm font-medium text-gray-900">{team.teamName || 'Unnamed Team'}</td>}
-                      {selectedFixedFields.teamId && <td className="py-2.5 px-4 text-xs text-gray-500 font-mono">{team._id}</td>}
                       {selectedFixedFields.trackName && <td className="py-2.5 px-4 text-sm text-gray-600">{getTrackName(team.assignedTrack) || '-'}</td>}
                       {selectedFixedFields.problemStatement && <td className="py-2.5 px-4 text-sm text-gray-600 max-w-[200px] truncate" title={getProblemStatementName(team.assignedProblemStatement, true)}>{getProblemStatementName(team.assignedProblemStatement, true) || '-'}</td>}
-                      {selectedFixedFields.members && <td className="py-2.5 px-4 text-sm text-gray-600">{team.members?.length || 0}</td>}
                       {selectedFixedFields.teamLeader && <td className="py-2.5 px-4 text-sm text-gray-600">{team.leaderEmail || '-'}</td>}
                       {selectedFixedFields.institute && <td className="py-2.5 px-4 text-sm text-gray-600 max-w-[150px] truncate">{team.members?.[0]?.organisation || '-'}</td>}
-                      {selectedFixedFields.finalResult && <td className="py-2.5 px-4 text-sm font-bold text-primary-700">{team.status || '-'}</td>}
-                      {selectedFixedFields.progressRemarks && <td className="py-2.5 px-4 text-xs text-gray-600 max-w-[200px] truncate" title={team.progressRemarks}>{includeMarks ? (team.progressRemarks || '-') : ''}</td>}
-                      {selectedEvent.criteria.filter(c => selectedCriteria[c.name]).map((c, i) => (
+                      
+                      {mergedCriteria.filter(c => selectedCriteria[c.name]).map((c, i) => (
                         <td key={i} className="py-2.5 px-4 text-sm text-gray-600 border-l border-gray-100">
                           {includeMarks ? (team.criteriaScores?.[c.name] ?? '-') : ''}
                         </td>
                       ))}
+
+                      {showProgressNotes && (
+                        <td className="p-0 border-l border-r border-gray-100 min-w-[250px] align-top">
+                          {includeMarks && team.progressRemarks?.length > 0 ? (
+                            <div className="flex flex-col divide-y divide-gray-100 h-full">
+                              {team.progressRemarks.map((pr, i) => (
+                                <div key={i} className="flex text-xs min-h-[40px] flex-1">
+                                  <div className="w-1/3 bg-gray-50/50 p-2 font-medium text-gray-600 border-r border-gray-100 break-words flex items-center">{pr.evaluatorName}</div>
+                                  <div className="w-2/3 p-2 text-gray-700 whitespace-normal break-words flex items-center">{pr.remark}</div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="p-2.5 px-4 text-xs text-gray-600">{includeMarks ? '-' : ''}</div>
+                          )}
+                        </td>
+                      )}
+                      
                       {showTotal && (
                         <td className="py-2.5 px-4 text-sm font-bold text-primary-700 bg-primary-50/30 border-l border-primary-100">
                           {includeMarks ? team.calculatedTotalScore : ''}
@@ -577,7 +728,7 @@ export default function ReportBuilderView() {
               </table>
               {processedTeams.length === 0 && !loading && (
                 <div className="text-center py-12 text-gray-500">
-                  No teams match the current filters for this event.
+                  No teams match the current filters. Try selecting different events, tracks, or problem statements.
                 </div>
               )}
             </div>

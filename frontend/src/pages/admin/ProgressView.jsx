@@ -4,10 +4,6 @@ import { Loader2, Download, Lock, Unlock, Calendar, ChevronDown as ChevronDownIc
 import { io } from 'socket.io-client';
 import { API_BASE } from '../../config/api';
 import { getProblemStatementName } from '../../utils/mappingUtils';
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-
 import EvaluatorSidebar from './components/EvaluatorSidebar';
 import ProgressStats from './components/ProgressStats';
 import TeamGrid from './components/TeamGrid';
@@ -132,86 +128,7 @@ export default function ProgressView() {
     }
   };
 
-  const getExportData = () => {
-    if (!teams.length) return [];
-    
-    const data = [];
-    teams.forEach(t => {
-      const eventObj = t.assessments?.find(ass => ass.eventId === selectedEventId);
-      
-      // If we want to export for the currently selected evaluator:
-      // Or all evaluators for this track? The user said "export the winners/participants... contain criteria and their scoring and progress... for each team."
-      // Since ProgressView usually views one evaluator at a time, it makes sense to export the summary of ALL evaluators for this team, or just the currently selected one?
-      // "Similar to 'view summary' in evaluator role" - View summary shows ALL teams for the current evaluator. So let's export ALL teams for the currently selected evaluator, or all evaluators. Let's do ALL evaluators for this track to be comprehensive.
-      
-      if (!eventObj || !eventObj.evaluatorScores || eventObj.evaluatorScores.length === 0) {
-        data.push({
-          'Team ID': t._id,
-          'Team Name': t.teamName || 'Unnamed',
-          'Problem Statement': getProblemStatementName(t.assignedProblemStatement, true),
-          'Evaluator': 'None',
-          'Total Score': 'Pending',
-          'Progress / Feedback': '',
-          'Criteria Breakdown': ''
-        });
-      } else {
-        eventObj.evaluatorScores.forEach(scoreObj => {
-          let criteriaStr = '';
-          if (scoreObj.criteria && scoreObj.criteria.length > 0) {
-            criteriaStr = scoreObj.criteria.map(c => {
-              const name = typeof c === 'object' ? c.name : 'Crit';
-              const score = typeof c === 'object' ? c.score : c;
-              return `${name}: ${score}`;
-            }).join(' | ');
-          }
-
-          data.push({
-            'Team ID': t._id,
-            'Team Name': t.teamName || 'Unnamed',
-            'Problem Statement': getProblemStatementName(t.assignedProblemStatement, true),
-            'Evaluator': scoreObj.evaluatorName || 'Unknown',
-            'Total Score': scoreObj.mode === 'absent' ? 'Absent (0)' : scoreObj.totalScore,
-            'Progress / Feedback': scoreObj.progress || '',
-            'Criteria Breakdown': criteriaStr
-          });
-        });
-      }
-    });
-    return data;
-  };
-
-  const exportXLSX = () => {
-    const data = getExportData();
-    if (!data.length) return;
-    
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Assessments');
-    XLSX.writeFile(wb, `Assessments_Track_${selectedTrackId}.xlsx`);
-  };
-
-  const exportPDF = () => {
-    const data = getExportData();
-    if (!data.length) return;
-
-    const doc = new jsPDF('landscape');
-    doc.setFontSize(16);
-    doc.text(`Assessments Report - Track ${selectedTrackId}`, 14, 15);
-    
-    const tableColumn = Object.keys(data[0]);
-    const tableRows = data.map(row => Object.values(row));
-
-    autoTable(doc, {
-      head: [tableColumn],
-      body: tableRows,
-      startY: 20,
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [43, 107, 185] }
-    });
-
-    doc.save(`Assessments_Track_${selectedTrackId}.pdf`);
-  };
-
+  // Export functionality removed per user request
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -258,18 +175,6 @@ export default function ProgressView() {
               className="btn btn-success flex-1 sm:flex-none py-2.5 px-5 font-semibold shadow-sm"
             >
               <Unlock size={18} /> Unlock All
-            </button>
-            <button 
-              onClick={exportXLSX}
-              className="btn bg-green-50 text-green-700 hover:bg-green-100 border-none flex-1 sm:flex-none py-2.5 px-5 font-semibold shadow-sm"
-            >
-              <Download size={18} /> XLSX
-            </button>
-            <button 
-              onClick={exportPDF}
-              className="btn bg-red-50 text-red-700 hover:bg-red-100 border-none flex-1 sm:flex-none py-2.5 px-5 font-semibold shadow-sm"
-            >
-              <Download size={18} /> PDF
             </button>
           </div>
         )}
