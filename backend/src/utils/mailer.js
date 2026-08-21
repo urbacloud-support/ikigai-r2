@@ -1,0 +1,44 @@
+import SibApiV3Sdk from 'sib-api-v3-sdk';
+
+let emailApi = null;
+let isConfigured = false;
+
+function initMailer() {
+  if (isConfigured) return;
+  const BREVO_KEY = process.env.BREVO_API_KEY;
+  if (BREVO_KEY) {
+    const client = SibApiV3Sdk.ApiClient.instance;
+    client.authentications['api-key'].apiKey = BREVO_KEY;
+    emailApi = new SibApiV3Sdk.TransactionalEmailsApi();
+    console.log('✅ Brevo mailer configured');
+  } else {
+    console.warn('⚠️  BREVO_API_KEY not set — emails will be logged to console instead of sent');
+  }
+  isConfigured = true;
+}
+
+/**
+ * Universal mail sender (NO SMTP, NO DNS)
+ * Falls back to console.log when Brevo is not configured.
+ */
+export async function sendMail({ to, subject, html }) {
+  initMailer();
+
+  if (!emailApi) {
+    console.log('📧 [MAIL STUB] Would send email:');
+    console.log(`   To:      ${to}`);
+    console.log(`   Subject: ${subject}`);
+    console.log(`   Body:    ${html?.slice(0, 120)}…`);
+    return { messageId: 'stub-' + Date.now() };
+  }
+
+  return emailApi.sendTransacEmail({
+    sender: {
+      name: 'IKIGAI 2026',
+      email: process.env.BREVO_USER || 'support.urbancloud@gmail.com',
+    },
+    to: [{ email: to }],
+    subject,
+    htmlContent: html,
+  });
+}

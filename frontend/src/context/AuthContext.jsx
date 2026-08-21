@@ -71,10 +71,58 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const sendOtp = async (email) => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      return await res.json();
+    } catch (error) {
+      return { success: false, message: error.message || 'Server error' };
+    }
+  };
 
+  const verifyOtpLogin = async (email, otp) => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/verify-otp-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp })
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        localStorage.setItem('ikigai_token', data.token);
+        localStorage.setItem('ikigai_user', JSON.stringify(data.user));
+        setUser(data.user);
+      }
+      return data;
+    } catch (error) {
+      return { success: false, message: error.message || 'Server error' };
+    }
+  };
+
+  const updatePassword = async (newPassword) => {
+    try {
+      const token = localStorage.getItem('ikigai_token');
+      const res = await fetch(`${API_BASE}/auth/update-password`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ newPassword })
+      });
+      return await res.json();
+    } catch (error) {
+      return { success: false, message: error.message || 'Server error' };
+    }
+  };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, sendOtp, verifyOtpLogin, updatePassword }}>
       {!loading && children}
     </AuthContext.Provider>
   );
