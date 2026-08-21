@@ -64,6 +64,24 @@ export default function AssessmentModal({ isOpen, onClose, team, currentIndex, t
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isLocked) return;
+    
+    if (mode === 'criteria') {
+      const emptyCriterion = criteria.find(c => {
+        if (c.inputType === 'text') {
+          return !c.score || String(c.score).trim() === '';
+        }
+        if (c.inputType === 'number') {
+          return c.score === '' || c.score === null || c.score === undefined;
+        }
+        return false;
+      });
+
+      if (emptyCriterion) {
+        alert(`Please provide a value for "${emptyCriterion.name}". It cannot be left blank.`);
+        return;
+      }
+    }
+
     setLoading(true);
     await onSubmit({ criteria, totalScore: calculateTotal(), mode, progress });
     setLoading(false);
@@ -295,12 +313,36 @@ export default function AssessmentModal({ isOpen, onClose, team, currentIndex, t
                     <div className="flex items-center gap-4">
                       <input
                         type="range" min="0" max={c.maxMarks}
-                        value={c.score || 0}
+                        value={c.score === '' ? 0 : (c.score || 0)}
                         onChange={(e) => handleScoreChange(index, Number(e.target.value))}
                         className="flex-1 accent-primary-500"
                         disabled={isLocked}
                       />
-                      <span className="w-12 text-center font-bold text-lg text-primary-700">{c.score || 0}</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max={c.maxMarks}
+                        value={c.score === '' ? '' : (c.score !== undefined && c.score !== null ? c.score : 0)}
+                        onChange={(e) => {
+                          let val = e.target.value;
+                          if (val === '') {
+                            handleScoreChange(index, '');
+                            return;
+                          }
+                          if (val.length > 2) val = val.slice(0, 2);
+                          let numVal = Number(val);
+                          if (numVal > c.maxMarks) numVal = c.maxMarks;
+                          if (numVal < 0) numVal = 0;
+                          handleScoreChange(index, numVal);
+                        }}
+                        onKeyDown={(e) => {
+                          if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+                            e.preventDefault();
+                          }
+                        }}
+                        className="w-16 text-center font-bold text-lg text-primary-700 border border-gray-200 rounded-md bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary-500 focus:outline-none py-1"
+                        disabled={isLocked}
+                      />
                     </div>
                   )}
 
