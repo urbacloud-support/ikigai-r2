@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { X, CheckCircle, UserX, Loader2, MousePointerClick } from 'lucide-react';
-import { getProblemStatementName } from '../../../utils/mappingUtils';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, CheckCircle, UserX, Loader2, MousePointerClick, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, User, Users, FileText, Mail, Building, MapPin } from 'lucide-react';
+import { getProblemStatementName, getTrackName } from '../../../utils/mappingUtils';
 
 export default function AssessmentModal({ isOpen, onClose, team, currentIndex, totalTeams, onNext, onPrev, eventCriteria, currentUserId, currentEventId, linkedPastEvents = [], isLocked, onSubmit, onMarkAbsent }) {
   const [criteria, setCriteria] = useState([]);
   const [progress, setProgress] = useState('');
   const [mode, setMode] = useState('criteria'); // 'criteria' or 'absent'
   const [loading, setLoading] = useState(false);
+  const [openSection, setOpenSection] = useState('details');
+
+  useEffect(() => {
+    setOpenSection('details');
+  }, [team]);
 
   useEffect(() => {
     if (isOpen && team) {
@@ -123,9 +127,97 @@ export default function AssessmentModal({ isOpen, onClose, team, currentIndex, t
             </div>
           )}
 
+          {/* Team Details Collapsible */}
+          <div className="mb-4 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <button 
+              type="button"
+              onClick={() => setOpenSection(openSection === 'details' ? '' : 'details')}
+              className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+            >
+              <h4 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                <Users size={18} className="text-primary-500" /> Team Details
+              </h4>
+              {openSection === 'details' ? <ChevronUp size={18} className="text-gray-500" /> : <ChevronDown size={18} className="text-gray-500" />}
+            </button>
+            
+            <div className={openSection === 'details' ? 'block' : 'hidden'}>
+              <div className="p-4 border-t border-gray-100">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-gray-500 mb-1">Team Name</p>
+                    <p className="font-medium text-gray-900">{team.teamName || 'Unnamed'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-gray-500 mb-1">Track</p>
+                    <p className="font-medium text-gray-900">{getTrackName(team.assignedTrack)}</p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <p className="text-xs font-semibold uppercase text-gray-500 mb-1">Problem Statement</p>
+                    <p className="font-medium text-gray-900">{getProblemStatementName(team.assignedProblemStatement, true)}</p>
+                  </div>
+                </div>
 
+                <div>
+                  <p className="text-xs font-semibold uppercase text-gray-500 mb-3 border-b border-gray-100 pb-2">Members ({team.members?.length || 0})</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {team.members?.map((m, i) => {
+                      const isLeader = m.email === team.leaderEmail;
+                      return (
+                        <div key={i} className={`p-3 rounded-lg border ${isLeader ? 'bg-primary-50 border-primary-200' : 'bg-gray-50 border-gray-100'} flex items-start gap-3`}>
+                          {m.photoUrl ? (
+                            <img src={m.photoUrl} alt={m.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
+                          ) : (
+                            <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(m.name || 'User')}&background=random&color=fff`} alt={m.name || 'User'} className="w-10 h-10 rounded-full object-cover shrink-0" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <p className="font-bold text-gray-900 break-words">{m.name || 'Unnamed'}</p>
+                              {isLeader && <span className="text-[10px] font-bold bg-primary-200 text-primary-800 px-1.5 py-0.5 rounded uppercase shrink-0">Leader</span>}
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                              <div className="flex items-start gap-1.5 text-xs text-gray-600">
+                                <Mail size={14} className="shrink-0 text-gray-400 mt-0.5" />
+                                <span className="break-words leading-tight flex-1">{m.email}</span>
+                              </div>
+                              {m.organisation && (
+                                <div className="flex items-start gap-1.5 text-xs text-gray-600">
+                                  <Building size={14} className="shrink-0 text-gray-400 mt-0.5" />
+                                  <span className="break-words leading-tight flex-1">{m.organisation}</span>
+                                </div>
+                              )}
+                              {m.location && (
+                                <div className="flex items-start gap-1.5 text-xs text-gray-600">
+                                  <MapPin size={14} className="shrink-0 text-gray-400 mt-0.5" />
+                                  <span className="break-words leading-tight flex-1">{m.location}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-          {linkedPastEvents.length > 0 && team.assessments && (
+          {/* Evaluation Collapsible */}
+          <div className="mb-6 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <button 
+              type="button"
+              onClick={() => setOpenSection(openSection === 'evaluation' ? '' : 'evaluation')}
+              className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+            >
+              <h4 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                <CheckCircle size={18} className="text-primary-500" /> Evaluation
+              </h4>
+              {openSection === 'evaluation' ? <ChevronUp size={18} className="text-gray-500" /> : <ChevronDown size={18} className="text-gray-500" />}
+            </button>
+            
+            <div className={openSection === 'evaluation' ? 'block' : 'hidden'}>
+              <div className="p-4 border-t border-gray-100">
+                {linkedPastEvents.length > 0 && team.assessments && (
             <div className="mb-6 bg-blue-50/50 p-4 rounded-xl border border-blue-100 shadow-sm">
               <h4 className="text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
                 <CheckCircle size={16} className="text-blue-500" /> Past Session History
@@ -220,6 +312,9 @@ export default function AssessmentModal({ isOpen, onClose, team, currentIndex, t
             </div>
           </form>
         </div>
+      </div>
+    </div>
+  </div>
 
         <div className="p-4 bg-white border-t border-gray-100">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">

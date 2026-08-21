@@ -247,9 +247,16 @@ export const toggleEvaluatorLock = async (req, res) => {
 // --- Teams ---
 
 export const getTeams = async (req, res) => {
-  const { trackCode } = req.query;
+  const { trackCode, eventId } = req.query;
   try {
-    const query = trackCode ? { assignedTrack: trackCode } : {};
+    const query = {};
+    if (trackCode) query.assignedTrack = trackCode;
+    if (eventId) {
+      query.$or = [
+        { eventId },
+        { 'assessments.eventId': eventId }
+      ];
+    }
     const teams = await Team.find(query);
     res.json(teams);
   } catch (error) {

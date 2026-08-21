@@ -8,6 +8,7 @@ import EventsView from './pages/admin/EventsView';
 import UsersView from './pages/admin/UsersView';
 import ProgressView from './pages/admin/ProgressView';
 import ProblemStatementsView from './pages/admin/ProblemStatementsView';
+import ReportBuilderView from './pages/admin/ReportBuilderView';
 import EvaluatorConsole from './pages/evaluator/EvaluatorConsole';
 
 const TeamLeaderDashboard = () => <div className="p-8 text-center text-primary-800 text-xl font-bold">Team Leader Dashboard Stub</div>;
@@ -50,6 +51,7 @@ export default function App() {
             <Route path="progress" element={<ProgressView />} />
             <Route path="users" element={<UsersView />} />
             <Route path="problems" element={<ProblemStatementsView />} />
+            <Route path="reports" element={<ReportBuilderView />} />
           </Route>
 
           {/* Evaluator Routes */}
